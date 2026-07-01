@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: from-k3s-bootstrap
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/3-Istor/cnp-project-base.git
+    targetRevision: HEAD
+    path: .
+    helm:
+      values: |
+        projectName: "from-k3s"
+        features:
+          gatus: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: from-k3s-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
