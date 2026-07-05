@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: brian-b6-bootstrap
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/3-Istor/cnp-project-base.git
+    targetRevision: HEAD
+    path: .
+    helm:
+      values: |
+        projectName: "brian-b6"
+        features:
+          gatus: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: brian-b6-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
