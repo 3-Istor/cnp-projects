@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: brian-t10-bootstrap
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/3-Istor/cnp-project-base.git
+    targetRevision: HEAD
+    path: .
+    helm:
+      values: |
+        projectName: "brian-t10"
+        features:
+          gatus: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: brian-t10-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
