@@ -1,0 +1,43 @@
+# A record exercising every field, for reference. Not consumed by the ApplicationSet:
+# only registry/projects/*.yaml is.
+apiVersion: cnp.3istor.com/v1alpha1
+kind: ProjectRecord
+metadata:
+  name: atlas
+  owner: bperret
+  createdAt: "2026-09-15T10:00:00Z"
+spec:
+  targetCloud: aws
+  status: active
+
+  # The Prod/Staging seam is carried in the schema (D-11) but not lit up yet:
+  # today the API only ever writes a single prod environment.
+  environments:
+    - name: prod
+      offhours: false
+      dbInstances: 2
+    - name: staging
+      offhours: true
+      dbInstances: 1
+
+  apps:
+    - name: atlas-web
+      type: fullstack
+      repoURL: https://github.com/3-Istor/atlas-web
+      ssoProtected: true
+      hostnames:
+        prod: atlas-web-atlas.3istor.com
+        staging: atlas-web-atlas-staging.3istor.com
+    - name: atlas-docs
+      type: static
+      repoURL: https://github.com/3-Istor/atlas-docs
+      ssoProtected: false
+      hostnames:
+        prod: atlas-docs-atlas.3istor.com
+
+  features:
+    gatus: true
+    offhoursGuard: true
+    gateway: true
+    tunnel: true
+    keycloak: true

@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/3-Istor/cnp-projects/registry/schema.json",
+  "title": "CNP project registry record",
+  "description": "One record per project. The source of truth for where a project runs. Consumed by the Argo CD ApplicationSet, the blackbox probe target list and the cnp-clean job.",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": {
+      "const": "cnp.3istor.com/v1alpha1"
+    },
+    "kind": {
+      "const": "ProjectRecord"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "Project identifier. Must match the filename and the Keycloak group prefix.",
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40,
+          "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+        },
+        "owner": {
+          "description": "Keycloak username of the project creator. Informational; RBAC lives in Keycloak groups.",
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "required": ["targetCloud"],
+      "additionalProperties": false,
+      "properties": {
+        "targetCloud": {
+          "description": "The cloud this project runs on. Immutable after creation (D-01): changing it is a re-create. Must match the name of a registered Argo CD cluster secret.",
+          "enum": ["onprem", "aws", "gcp"]
+        },
+        "status": {
+          "description": "active = reconciled normally. suspended = keep resources, stop deploying. decommissioning = cnp-clean is working on it.",
+          "enum": ["active", "suspended", "decommissioning"],
+          "default": "active"
+        },
+        "environments": {
+          "description": "The Prod/Staging seam (D-11). Deferred as a feature, carried in the schema from day one so lighting it up is not a migration. Every existing project is prod-only.",
+          "type": "array",
+          "minItems": 1,
+          "default": [{ "name": "prod" }],
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "enum": ["prod", "staging"] },
+              "offhours": {
+                "description": "Whether offhours-guard scales this environment down outside business hours. Enforcement is local to the target cluster.",
+                "type": "boolean",
+                "default": false
+              },
+              "dbInstances": {
+                "description": "CNPG instance count for this environment (D-08). Prod should be at least 2 once the cluster can carry it.",
+                "type": "integer",
+                "minimum": 1,
+                "default": 1
+              }
+            }
+          }
+        },
+        "apps": {
+          "description": "Applications deployed in this project. The ApplicationSet generates one Argo CD Application per app component per environment.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "object",
+            "required": ["name", "type"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+              },
+              "type": {
+                "description": "fullstack renders frontend + backend components; static renders a single app component.",
+                "enum": ["fullstack", "static"]
+              },
+              "repoURL": {
+                "description": "The developer's GitHub repository, created by the app-provision module.",
+                "type": "string",
+                "format": "uri"
+              },
+              "ssoProtected": {
+                "type": "boolean",
+                "default": true
+              },
+              "hostnames": {
+                "description": "Public hostnames this app answers on, keyed by environment. Generated from the naming convention; stated explicitly so probes and tunnel routes read one source.",
+                "type": "object",
+                "additionalProperties": { "type": "string" }
+              }
+            }
+          }
+        },
+        "features": {
+          "description": "Per-project platform add-ons, rendered by cnp-project-base into <project>-system.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "gatus": { "type": "boolean", "default": true },
+            "offhoursGuard": { "type": "boolean", "default": true },
+            "gateway": {
+              "description": "Per-project Gateway and stable Service (D-05). False keeps the project on the shared gateway.",
+              "type": "boolean",
+              "default": false
+            },
+            "tunnel": {
+              "description": "Per-project Cloudflare connector with Git-delivered ingress rules (D-06).",
+              "type": "boolean",
+              "default": false
+            },
+            "keycloak": {
+              "description": "Per-project Keycloak IAMaaS (D-04). False keeps the project on the central Keycloak tenant realm, which does not survive an on-prem outage.",
+              "type": "boolean",
+              "default": false
+            }
+          }
+        }
+      }
+    }
+  }
+}
