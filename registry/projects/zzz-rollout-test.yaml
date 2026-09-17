@@ -1,0 +1,21 @@
+apiVersion: cnp.3istor.com/v1alpha1
+kind: ProjectRecord
+metadata:
+  name: zzz-rollout-test
+  owner: rollout-verification
+  createdAt: "2026-09-17T16:00:00Z"
+spec:
+  targetCloud: onprem
+  status: active
+  environments:
+    - name: prod
+  apps:
+    - name: probe
+      type: static
+      repoURL: https://github.com/3-Istor/demo-app
+      ssoProtected: false
+      hostnames:
+        prod: probe-zzz-rollout-test.3istor.com
+  features:
+    gatus: true
+    offhoursGuard: true
