@@ -3,7 +3,7 @@ kind: ProjectRecord
 metadata:
   name: test2
   owner: arthur.presle
-  createdAt: '2026-09-21T12:26:09.219369+00:00'
+  createdAt: '2026-09-21T14:04:14.132060+00:00'
 spec:
   targetCloud: onprem
   status: active
