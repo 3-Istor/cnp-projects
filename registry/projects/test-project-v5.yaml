@@ -15,6 +15,11 @@ spec:
     repoURL: https://github.com/3-Istor/test-app-v2.git
     hostnames:
       prod: test-app-v2-test-project-v5.3istor.com
+  - name: test-app-v3
+    type: static
+    repoURL: https://github.com/3-Istor/test-app-v3
+    hostnames:
+      prod: test-app-v3-test-project-v5.3istor.com
   features:
     gatus: true
     offhoursGuard: true
