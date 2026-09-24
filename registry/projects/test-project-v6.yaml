@@ -1,0 +1,17 @@
+apiVersion: cnp.3istor.com/v1alpha1
+kind: ProjectRecord
+metadata:
+  name: test-project-v6
+  owner: brian.perret
+  createdAt: '2026-09-24T09:33:50.609213+00:00'
+spec:
+  targetCloud: onprem
+  status: active
+  environments:
+  - name: prod
+  apps: []
+  features:
+    gatus: true
+    offhoursGuard: true
+    gateway: true
+    tunnel: true
