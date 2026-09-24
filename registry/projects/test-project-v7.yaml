@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: test-app-v4
+    type: fullstack
+    repoURL: https://github.com/3-Istor/test-app-v4
+    hostnames:
+      prod: test-app-v4-test-project-v7.3istor.com
   features:
     gatus: true
     offhoursGuard: true
