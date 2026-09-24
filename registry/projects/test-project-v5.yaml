@@ -13,3 +13,5 @@ spec:
   features:
     gatus: true
     offhoursGuard: true
+    gateway: true
+    tunnel: true
