@@ -9,7 +9,10 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: test-app-v2
+    hostnames:
+      prod: test-app-v2-test-project-v5.3istor.com
   features:
     gatus: true
     offhoursGuard: true
