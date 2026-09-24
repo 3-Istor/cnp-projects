@@ -11,6 +11,8 @@ spec:
   - name: prod
   apps:
   - name: test-app-v2
+    type: static
+    repoURL: https://github.com/3-Istor/test-app-v2.git
     hostnames:
       prod: test-app-v2-test-project-v5.3istor.com
   features:
