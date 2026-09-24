@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: test-app-v3
+    type: static
+    repoURL: https://github.com/3-Istor/test-app-v3
+    hostnames:
+      prod: test-app-v3-test-project-v6.3istor.com
   features:
     gatus: true
     offhoursGuard: true
