@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: jetesteencore
+    type: fullstack
+    repoURL: https://github.com/3-Istor/jetesteencore
+    hostnames:
+      prod: jetesteencore-jetest.3istor.com
   features:
     gatus: true
     offhoursGuard: true
