@@ -2,8 +2,8 @@ apiVersion: cnp.3istor.com/v1alpha1
 kind: ProjectRecord
 metadata:
   name: test
-  owner: hugo.guillet
-  createdAt: '2026-09-29T13:05:40.726561+00:00'
+  owner: newfel.levrel
+  createdAt: '2026-09-30T13:37:45.877202+00:00'
 spec:
   targetCloud: onprem
   status: active
