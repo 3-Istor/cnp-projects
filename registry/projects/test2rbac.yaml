@@ -1,0 +1,15 @@
+apiVersion: cnp.3istor.com/v1alpha1
+kind: ProjectRecord
+metadata:
+  name: test2rbac
+  owner: arthur.presle
+  createdAt: '2026-10-04T15:51:57.546558+00:00'
+spec:
+  targetCloud: onprem
+  status: active
+  environments:
+  - name: prod
+  apps: []
+  features:
+    gatus: true
+    offhoursGuard: true
