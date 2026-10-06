@@ -18,3 +18,5 @@ jobs:
       - run: pip install jsonschema pyyaml
 
       - run: python3 scripts/validate-registry.py
+
+      - run: python3 scripts/validate-registry.py --self-test
