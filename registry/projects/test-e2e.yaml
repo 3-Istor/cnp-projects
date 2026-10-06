@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: test-app-e2e
+    type: fullstack
+    repoURL: https://github.com/3-Istor/test-app-e2e
+    hostnames:
+      prod: test-app-e2e-test-e2e.3istor.com
   features:
     gatus: true
     offhoursGuard: true
