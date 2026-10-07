@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: test-app-secu
+    type: static
+    repoURL: https://github.com/3-Istor/test-app-secu
+    hostnames:
+      prod: test-app-secu-test-secu.3istor.com
   features:
     gatus: true
     offhoursGuard: true
