@@ -15,6 +15,11 @@ spec:
     repoURL: https://github.com/3-Istor/test-app-secu
     hostnames:
       prod: test-app-secu-test-secu.3istor.com
+  - name: test-app-secu-2
+    type: static
+    repoURL: https://github.com/3-Istor/test-app-secu-2
+    hostnames:
+      prod: test-app-secu-2-test-secu.3istor.com
   features:
     gatus: true
     offhoursGuard: true
