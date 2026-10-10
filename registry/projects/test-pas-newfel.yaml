@@ -9,12 +9,7 @@ spec:
   status: active
   environments:
   - name: prod
-  apps:
-  - name: test-7
-    type: static
-    repoURL: https://github.com/3-Istor/test-7
-    hostnames:
-      prod: test-7-test-pas-newfel.3istor.com
+  apps: []
   features:
     gatus: true
     offhoursGuard: true
