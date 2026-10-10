@@ -10,11 +10,6 @@ spec:
   environments:
   - name: prod
   apps:
-  - name: test-app-secu
-    type: static
-    repoURL: https://github.com/3-Istor/test-app-secu
-    hostnames:
-      prod: test-app-secu-test-secu.3istor.com
   - name: test-app-secu-3
     type: fullstack
     repoURL: https://github.com/3-Istor/test-app-secu-3
