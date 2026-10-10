@@ -1,9 +1,9 @@
 apiVersion: cnp.3istor.com/v1alpha1
 kind: ProjectRecord
 metadata:
-  name: testimportrepo
-  owner: joe.bejjani
-  createdAt: '2026-10-05T14:21:37.012294+00:00'
+  name: test
+  owner: hugo.guillet
+  createdAt: '2026-10-07T15:50:02.370667+00:00'
 spec:
   targetCloud: onprem
   status: active

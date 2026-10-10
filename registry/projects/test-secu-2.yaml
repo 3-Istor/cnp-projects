@@ -1,20 +1,20 @@
 apiVersion: cnp.3istor.com/v1alpha1
 kind: ProjectRecord
 metadata:
-  name: jetest
-  owner: hugo.guillet
-  createdAt: '2026-09-29T13:20:21.901155+00:00'
+  name: test-secu-2
+  owner: brian.perret
+  createdAt: '2026-10-10T13:19:00.680813+00:00'
 spec:
   targetCloud: onprem
   status: active
   environments:
   - name: prod
   apps:
-  - name: jetesteencore
+  - name: app-secu-1
     type: fullstack
-    repoURL: https://github.com/3-Istor/jetesteencore
+    repoURL: https://github.com/3-Istor/app-secu-1
     hostnames:
-      prod: jetesteencore-jetest.3istor.com
+      prod: app-secu-1-test-secu-2.3istor.com
   features:
     gatus: true
     offhoursGuard: true

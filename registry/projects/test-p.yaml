@@ -1,9 +1,9 @@
 apiVersion: cnp.3istor.com/v1alpha1
 kind: ProjectRecord
 metadata:
-  name: test2rbac
-  owner: arthur.presle
-  createdAt: '2026-10-04T15:51:57.546558+00:00'
+  name: test-p
+  owner: brian.perret
+  createdAt: '2026-10-07T16:02:14.487760+00:00'
 spec:
   targetCloud: onprem
   status: active
@@ -13,3 +13,5 @@ spec:
   features:
     gatus: true
     offhoursGuard: true
+    gateway: true
+    tunnel: true
