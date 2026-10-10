@@ -44,6 +44,10 @@
           "description": "The cloud this project runs on. Immutable after creation (D-01): changing it is a re-create. Must match the name of a registered Argo CD cluster secret.",
           "enum": ["onprem", "aws", "gcp"]
         },
+        "logRetention": {
+          "description": "How long Loki keeps every log of this project. Unset lets each app choose (default 14d); set, it overrides the apps.",
+          "enum": ["7d", "14d", "30d"]
+        },
         "status": {
           "description": "active = reconciled normally. suspended = keep resources, stop deploying. decommissioning = cnp-clean is working on it.",
           "enum": ["active", "suspended", "decommissioning"],
