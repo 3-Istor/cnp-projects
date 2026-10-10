@@ -9,12 +9,7 @@ spec:
   status: active
   environments:
   - name: prod
-  apps:
-  - name: test-app-secu-3
-    type: fullstack
-    repoURL: https://github.com/3-Istor/test-app-secu-3
-    hostnames:
-      prod: test-app-secu-3-test-secu.3istor.com
+  apps: []
   features:
     gatus: true
     offhoursGuard: true
