@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: test-67
+    type: static
+    repoURL: https://github.com/3-Istor/test-67
+    hostnames:
+      prod: test-67-test-69.3istor.com
   features:
     gatus: true
     offhoursGuard: true
