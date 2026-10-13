@@ -15,6 +15,11 @@ spec:
     repoURL: https://github.com/3-Istor/test-app-local-2
     hostnames:
       prod: test-app-local-2-test-local-4.3istor.com
+  - name: test-app-local-4
+    type: static
+    repoURL: https://github.com/3-Istor/test-app-local-4
+    hostnames:
+      prod: test-app-local-4-test-local-4.3istor.com
   features:
     gatus: true
     offhoursGuard: true
