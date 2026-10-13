@@ -3,7 +3,7 @@ kind: ProjectRecord
 metadata:
   name: test-local
   owner: brian.perret
-  createdAt: '2026-10-13T12:14:58.332275+00:00'
+  createdAt: '2026-10-13T12:23:22.315802+00:00'
 spec:
   targetCloud: onprem
   status: active
