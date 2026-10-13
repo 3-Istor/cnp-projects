@@ -9,12 +9,7 @@ spec:
   status: active
   environments:
   - name: prod
-  apps:
-  - name: test-app-local
-    type: fullstack
-    repoURL: https://github.com/3-Istor/test-app-local
-    hostnames:
-      prod: test-app-local-test-local-2.3istor.com
+  apps: []
   features:
     gatus: true
     offhoursGuard: true
