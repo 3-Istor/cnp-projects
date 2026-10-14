@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: test-arthur
+    type: static
+    repoURL: https://github.com/3-Istor/test-arthur
+    hostnames:
+      prod: test-arthur-test-28.3istor.com
   features:
     gatus: true
     offhoursGuard: true
