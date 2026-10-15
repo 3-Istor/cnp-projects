@@ -20,6 +20,11 @@ spec:
     repoURL: https://github.com/3-Istor/test-app-local-4
     hostnames:
       prod: test-app-local-4-test-local-4.3istor.com
+  - name: test-canary
+    type: static
+    repoURL: https://github.com/3-Istor/test-canary
+    hostnames:
+      prod: test-canary-test-local-4.3istor.com
   features:
     gatus: true
     offhoursGuard: true
