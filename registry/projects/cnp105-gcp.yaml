@@ -1,0 +1,20 @@
+apiVersion: cnp.3istor.com/v1alpha1
+kind: ProjectRecord
+metadata:
+  name: cnp105-gcp
+  owner: hugo.guillet
+  createdAt: '2026-10-18T12:00:00+00:00'
+spec:
+  targetCloud: gcp
+  status: active
+  environments:
+  - name: prod
+  apps:
+  - name: np
+    type: static
+    repoURL: https://github.com/3-Istor/cnp105-np-does-not-exist
+  features:
+    gatus: true
+    offhoursGuard: true
+    gateway: false
+    tunnel: false
