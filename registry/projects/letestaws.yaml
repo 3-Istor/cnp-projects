@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: test-aws
+    type: fullstack
+    repoURL: https://github.com/3-Istor/test-aws
+    hostnames:
+      prod: test-aws-letestaws.3istor.com
   features:
     gatus: true
     offhoursGuard: true
