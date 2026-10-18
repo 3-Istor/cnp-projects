@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: test-gcp
+    type: fullstack
+    repoURL: https://github.com/3-Istor/test-gcp
+    hostnames:
+      prod: test-gcp-letestgcp.3istor.com
   features:
     gatus: true
     offhoursGuard: true
