@@ -15,6 +15,11 @@ spec:
     repoURL: https://github.com/3-Istor/test-2-7
     hostnames:
       prod: test-2-7-test-28.3istor.com
+  - name: test-ui
+    type: static
+    repoURL: https://github.com/3-Istor/test-ui
+    hostnames:
+      prod: test-ui-test-28.3istor.com
   features:
     gatus: true
     offhoursGuard: true
