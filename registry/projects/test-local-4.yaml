@@ -9,6 +9,9 @@ spec:
   status: active
   environments:
   - name: prod
+  - name: staging
+    offhours: true
+    maxApps: 1
   apps:
   - name: test-app-local-2
     type: static
