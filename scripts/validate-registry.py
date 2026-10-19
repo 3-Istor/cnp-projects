@@ -60,7 +60,10 @@ def derive_names(project: str, apps: list[dict]) -> list[tuple[str, str, str]]:
         components = (
             FULLSTACK_COMPONENTS if app.get("type") == "fullstack" else ("app",)
         )
-        for environment in app_environments(app):
+        # Every environment, staging or not: the AppProjects always permit both
+        # namespaces (so turning staging off can delete what it created), so
+        # both names belong to this app.
+        for environment in ENVIRONMENT_SUFFIX:
             suffix = ENVIRONMENT_SUFFIX[environment]
             names.append(
                 (
@@ -108,15 +111,12 @@ def check_app_names(label: str, project: str, apps: list[dict]) -> list[str]:
                 f"{label}: app 'system' is reserved: namespace '{project}-system' "
                 f"belongs to the project itself"
             )
-        namespace = max(
-            (f"{project}-{app_name}{ENVIRONMENT_SUFFIX[env]}" for env in app_environments(app)),
-            key=len,
-            default=f"{project}-{app_name}",
-        )
-        if len(namespace) > MAX_LABEL_LENGTH:
+        namespace = f"{project}-{app_name}"
+        staging = f"{namespace}{ENVIRONMENT_SUFFIX['staging']}"
+        if len(staging) > MAX_LABEL_LENGTH:
             errors.append(
-                f"{label}: app '{app_name}' gives namespace '{namespace}' of "
-                f"{len(namespace)} characters, the limit is {MAX_LABEL_LENGTH}"
+                f"{label}: app '{app_name}' gives staging namespace '{staging}' of "
+                f"{len(staging)} characters, the limit is {MAX_LABEL_LENGTH}"
             )
         elif not DNS_LABEL.match(namespace):
             errors.append(
@@ -326,11 +326,11 @@ def self_test() -> int:
     expect(
         "namespace over 63 characters",
         check_app_names("a.yaml", "p" * 40, [app("a" * 23)]),
-        "64 characters",
+        "68 characters",
     )
     expect(
-        "namespace at 63 characters",
-        check_app_names("a.yaml", "p" * 40, [app("a" * 22)]),
+        "namespace at 63 characters, staging suffix included",
+        check_app_names("a.yaml", "p" * 40, [app("a" * 18)]),
     )
     expect(
         "uppercase app name",
@@ -352,6 +352,14 @@ def self_test() -> int:
         "staging namespace collides with another app's prod namespace",
         collisions(
             ("a.yaml", record("foo", app("web", environments=["prod", "staging"]))),
+            ("b.yaml", record("foo-web", app("stg"))),
+        ),
+        "namespace 'foo-web-stg'",
+    )
+    expect(
+        "the staging name is reserved even without staging",
+        collisions(
+            ("a.yaml", record("foo", app("web"))),
             ("b.yaml", record("foo-web", app("stg"))),
         ),
         "namespace 'foo-web-stg'",
