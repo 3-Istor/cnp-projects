@@ -33,6 +33,14 @@ RECORD_DIRS = (
 DNS_LABEL = re.compile(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
 MAX_LABEL_LENGTH = 63
 FULLSTACK_COMPONENTS = ("frontend", "backend")
+# Prod keeps the names every existing app already has; staging objects carry a
+# suffix. Must match the ApplicationSets and cnp-project-base.
+ENVIRONMENT_SUFFIX = {"prod": "", "staging": "-stg"}
+
+
+def app_environments(app: dict) -> list[str]:
+    environments = app.get("environments") or ["prod"]
+    return [env for env in environments if env in ENVIRONMENT_SUFFIX]
 
 
 def derive_names(project: str, apps: list[dict]) -> list[tuple[str, str, str]]:
@@ -52,17 +60,23 @@ def derive_names(project: str, apps: list[dict]) -> list[tuple[str, str, str]]:
         components = (
             FULLSTACK_COMPONENTS if app.get("type") == "fullstack" else ("app",)
         )
-        names.append(
-            ("namespace", f"{project}-{app_name}", f"the namespace of app '{app_name}'")
-        )
-        for component in components:
+        for environment in app_environments(app):
+            suffix = ENVIRONMENT_SUFFIX[environment]
             names.append(
                 (
-                    "application",
-                    f"{project}-{app_name}-{component}",
-                    f"the {component} Application of app '{app_name}'",
+                    "namespace",
+                    f"{project}-{app_name}{suffix}",
+                    f"the {environment} namespace of app '{app_name}'",
                 )
             )
+            for component in components:
+                names.append(
+                    (
+                        "application",
+                        f"{project}-{app_name}-{component}{suffix}",
+                        f"the {environment} {component} Application of app '{app_name}'",
+                    )
+                )
         for environment, hostname in (app.get("hostnames") or {}).items():
             names.append(
                 (
@@ -94,7 +108,11 @@ def check_app_names(label: str, project: str, apps: list[dict]) -> list[str]:
                 f"{label}: app 'system' is reserved: namespace '{project}-system' "
                 f"belongs to the project itself"
             )
-        namespace = f"{project}-{app_name}"
+        namespace = max(
+            (f"{project}-{app_name}{ENVIRONMENT_SUFFIX[env]}" for env in app_environments(app)),
+            key=len,
+            default=f"{project}-{app_name}",
+        )
         if len(namespace) > MAX_LABEL_LENGTH:
             errors.append(
                 f"{label}: app '{app_name}' gives namespace '{namespace}' of "
@@ -104,6 +122,33 @@ def check_app_names(label: str, project: str, apps: list[dict]) -> list[str]:
             errors.append(
                 f"{label}: app '{app_name}' gives namespace '{namespace}' which is "
                 f"not a valid DNS-1123 label (lowercase alphanumerics and '-' only)"
+            )
+    return errors
+
+
+def check_environments(label: str, record: dict) -> list[str]:
+    """Staging must be allowed by the project and stay under its app cap."""
+    spec = record.get("spec", {})
+    allowed = {
+        env.get("name"): env
+        for env in spec.get("environments") or [{"name": "prod"}]
+        if isinstance(env, dict)
+    }
+    errors: list[str] = []
+    staging_apps = [
+        app["name"] for app in usable_apps(record) if "staging" in app_environments(app)
+    ]
+    if staging_apps and "staging" not in allowed:
+        errors.append(
+            f"{label}: apps {staging_apps} use staging but the project's "
+            f"spec.environments does not list it"
+        )
+    elif staging_apps:
+        max_apps = allowed["staging"].get("maxApps", 1)
+        if len(staging_apps) > max_apps:
+            errors.append(
+                f"{label}: {len(staging_apps)} apps use staging, the project "
+                f"allows {max_apps} (spec.environments[staging].maxApps)"
             )
     return errors
 
@@ -164,6 +209,7 @@ def validate() -> list[str]:
         # cnp-clean key off the path, so only real records must match their filename
         # and hold a unique name.
         errors.extend(check_app_names(str(rel), name, usable_apps(record)))
+        errors.extend(check_environments(str(rel), record))
 
         if path.parent.name == "projects":
             live.append((str(rel), record))
@@ -186,8 +232,22 @@ def self_test() -> int:
     def record(name: str, *apps: dict) -> dict:
         return {"metadata": {"name": name}, "spec": {"apps": list(apps)}}
 
-    def app(name: str, type_: str = "static", **hostnames: str) -> dict:
-        return {"name": name, "type": type_, "hostnames": hostnames}
+    def app(
+        name: str,
+        type_: str = "static",
+        environments: list[str] | None = None,
+        **hostnames: str,
+    ) -> dict:
+        result = {"name": name, "type": type_, "hostnames": hostnames}
+        if environments:
+            result["environments"] = environments
+        return result
+
+    def staged(project_envs: list[dict], *apps: dict) -> dict:
+        return {
+            "metadata": {"name": "foo"},
+            "spec": {"environments": project_envs, "apps": list(apps)},
+        }
 
     def collisions(*pairs: tuple[str, dict]) -> list[str]:
         return check_collisions(list(pairs))
@@ -286,6 +346,54 @@ def self_test() -> int:
         "trailing hyphen app name",
         check_app_names("a.yaml", "foo", [app("web-")]),
         "not a valid DNS-1123 label",
+    )
+
+    expect(
+        "staging namespace collides with another app's prod namespace",
+        collisions(
+            ("a.yaml", record("foo", app("web", environments=["prod", "staging"]))),
+            ("b.yaml", record("foo-web", app("stg"))),
+        ),
+        "namespace 'foo-web-stg'",
+    )
+    expect(
+        "staging Application names stay distinct from prod",
+        collisions(
+            ("a.yaml", record("foo", app("web", "fullstack", ["prod", "staging"]))),
+        ),
+    )
+    expect(
+        "staging namespace over 63 characters",
+        check_app_names("a.yaml", "p" * 40, [app("a" * 20, environments=["prod", "staging"])]),
+        "65 characters",
+    )
+    expect(
+        "staging not allowed by the project",
+        check_environments("a.yaml", staged([{"name": "prod"}], app("web", environments=["prod", "staging"]))),
+        "does not list it",
+    )
+    expect(
+        "staging over the project cap",
+        check_environments(
+            "a.yaml",
+            staged(
+                [{"name": "prod"}, {"name": "staging", "maxApps": 1}],
+                app("web", environments=["prod", "staging"]),
+                app("api", environments=["prod", "staging"]),
+            ),
+        ),
+        "2 apps use staging",
+    )
+    expect(
+        "staging within the project cap",
+        check_environments(
+            "a.yaml",
+            staged(
+                [{"name": "prod"}, {"name": "staging"}],
+                app("web", environments=["prod", "staging"]),
+                app("api"),
+            ),
+        ),
     )
 
     if failures:
