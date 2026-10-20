@@ -28,6 +28,10 @@ spec:
     repoURL: https://github.com/3-Istor/test-canary-2
     hostnames:
       prod: test-canary-2-test-local-4.3istor.com
+      staging: test-canary-2-test-local-4-staging.3istor.com
+    environments:
+    - prod
+    - staging
   features:
     gatus: true
     offhoursGuard: true
