@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: test-abba
+    type: static
+    repoURL: https://github.com/3-Istor/test-abba
+    hostnames:
+      prod: test-abba-test-link.3istor.com
   features:
     gatus: true
     offhoursGuard: true
