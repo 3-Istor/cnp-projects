@@ -10,8 +10,8 @@ spec:
   targetCloud: aws
   status: active
 
-  # The Prod/Staging seam is carried in the schema (D-11) but not lit up yet:
-  # today the API only ever writes a single prod environment.
+  # Listing staging lets apps opt into it, up to maxApps (set by a platform
+  # admin). Each app then chooses with its own environments list.
   environments:
     - name: prod
       offhours: false
@@ -19,12 +19,14 @@ spec:
     - name: staging
       offhours: true
       dbInstances: 1
+      maxApps: 1
 
   apps:
     - name: atlas-web
       type: fullstack
       repoURL: https://github.com/3-Istor/atlas-web
       ssoProtected: true
+      environments: [prod, staging]
       hostnames:
         prod: atlas-web-atlas.3istor.com
         staging: atlas-web-atlas-staging.3istor.com

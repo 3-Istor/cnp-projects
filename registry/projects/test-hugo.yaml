@@ -1,0 +1,25 @@
+apiVersion: cnp.3istor.com/v1alpha1
+kind: ProjectRecord
+metadata:
+  name: test-hugo
+  owner: hugo.guillet
+  createdAt: '2026-10-25T10:40:47.876056+00:00'
+spec:
+  targetCloud: onprem
+  status: active
+  environments:
+  - name: prod
+  - name: staging
+    offhours: true
+    maxApps: 1
+  apps:
+  - name: app-test
+    type: fullstack
+    repoURL: https://github.com/3-Istor/app-test
+    hostnames:
+      prod: app-test-test-hugo.3istor.com
+  features:
+    gatus: true
+    offhoursGuard: true
+    gateway: true
+    tunnel: true

@@ -1,20 +1,20 @@
 apiVersion: cnp.3istor.com/v1alpha1
 kind: ProjectRecord
 metadata:
-  name: test-secu-3
-  owner: brian.perret
-  createdAt: '2026-10-10T19:07:29.259982+00:00'
+  name: test-link
+  owner: arthur.presle
+  createdAt: '2026-10-22T11:59:47.725114+00:00'
 spec:
   targetCloud: onprem
   status: active
   environments:
   - name: prod
   apps:
-  - name: app-secu-3
-    type: fullstack
-    repoURL: https://github.com/3-Istor/app-secu-3
+  - name: test-abba
+    type: static
+    repoURL: https://github.com/3-Istor/test-abba
     hostnames:
-      prod: app-secu-3-test-secu-3.3istor.com
+      prod: test-abba-test-link.3istor.com
   features:
     gatus: true
     offhoursGuard: true

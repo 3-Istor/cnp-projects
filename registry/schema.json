@@ -75,7 +75,7 @@
           "default": "active"
         },
         "environments": {
-          "description": "The Prod/Staging seam (D-11). Deferred as a feature, carried in the schema from day one so lighting it up is not a migration. Every existing project is prod-only.",
+          "description": "The environments this project may use (D-11). Listing staging allows apps of the project to opt into it, up to maxApps; each app still chooses with apps[].environments.",
           "type": "array",
           "minItems": 1,
           "default": [
@@ -105,6 +105,12 @@
                 "description": "CNPG instance count for this environment (D-08). Prod should be at least 2 once the cluster can carry it.",
                 "type": "integer",
                 "minimum": 1,
+                "default": 1
+              },
+              "maxApps": {
+                "description": "How many apps of the project may run this environment. Set by a platform admin: a staging environment roughly doubles an app's daytime memory. Ignored for prod.",
+                "type": "integer",
+                "minimum": 0,
                 "default": 1
               }
             }
@@ -141,6 +147,15 @@
               "ssoProtected": {
                 "type": "boolean",
                 "default": true
+              },
+              "environments": {
+                "description": "Where this app runs. prod alone is today's behaviour; adding staging gives the app a <project>-<app>-stg namespace, its own Applications and an image updater that only takes release candidates (vX.Y.Z-rc.N). Prod then changes only through a promotion from the CMP.",
+                "type": "array",
+                "default": ["prod"],
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": { "enum": ["prod", "staging"] },
+                "contains": { "const": "prod" }
               },
               "hostnames": {
                 "description": "Public hostnames this app answers on, keyed by environment. Generated from the naming convention; stated explicitly so probes and tunnel routes read one source.",
