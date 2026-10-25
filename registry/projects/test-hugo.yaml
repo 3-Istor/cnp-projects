@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: app-test
+    type: fullstack
+    repoURL: https://github.com/3-Istor/app-test
+    hostnames:
+      prod: app-test-test-hugo.3istor.com
   features:
     gatus: true
     offhoursGuard: true
