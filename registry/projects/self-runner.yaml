@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: my-app
+    type: static
+    repoURL: https://github.com/3-Istor/my-app
+    hostnames:
+      prod: my-app-self-runner.3istor.com
   features:
     gatus: true
     offhoursGuard: true
