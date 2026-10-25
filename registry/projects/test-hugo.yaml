@@ -18,6 +18,10 @@ spec:
     repoURL: https://github.com/3-Istor/app-test
     hostnames:
       prod: app-test-test-hugo.3istor.com
+      staging: app-test-test-hugo-staging.3istor.com
+    environments:
+    - prod
+    - staging
   features:
     gatus: true
     offhoursGuard: true
