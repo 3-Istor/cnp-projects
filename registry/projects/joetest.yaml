@@ -1,0 +1,17 @@
+apiVersion: cnp.3istor.com/v1alpha1
+kind: ProjectRecord
+metadata:
+  name: joetest
+  owner: joe.bejjani
+  createdAt: '2026-10-25T18:53:43.213418+00:00'
+spec:
+  targetCloud: onprem
+  status: active
+  environments:
+  - name: prod
+  apps: []
+  features:
+    gatus: true
+    offhoursGuard: true
+    gateway: true
+    tunnel: true
