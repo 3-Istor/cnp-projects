@@ -4,12 +4,7 @@
   "title": "CNP project registry record",
   "description": "One record per project. The source of truth for where a project runs. Consumed by the Argo CD ApplicationSet, the blackbox probe target list and the cnp-clean job.",
   "type": "object",
-  "required": [
-    "apiVersion",
-    "kind",
-    "metadata",
-    "spec"
-  ],
+  "required": ["apiVersion", "kind", "metadata", "spec"],
   "additionalProperties": false,
   "properties": {
     "apiVersion": {
@@ -20,9 +15,7 @@
     },
     "metadata": {
       "type": "object",
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": false,
       "properties": {
         "name": {
@@ -44,58 +37,33 @@
     },
     "spec": {
       "type": "object",
-      "required": [
-        "targetCloud"
-      ],
+      "required": ["targetCloud"],
       "additionalProperties": false,
       "properties": {
         "targetCloud": {
           "description": "The cloud this project runs on. Immutable after creation (D-01): changing it is a re-create. Must match the name of a registered Argo CD cluster secret.",
-          "enum": [
-            "onprem",
-            "aws",
-            "gcp"
-          ]
+          "enum": ["onprem", "aws", "gcp"]
         },
         "logRetention": {
           "description": "How long Loki keeps every log of this project. Unset lets each app choose (default 14d); set, it overrides the apps.",
-          "enum": [
-            "7d",
-            "14d",
-            "30d"
-          ]
+          "enum": ["7d", "14d", "30d"]
         },
         "status": {
           "description": "active = reconciled normally. suspended = keep resources, stop deploying. decommissioning = cnp-clean is working on it.",
-          "enum": [
-            "active",
-            "suspended",
-            "decommissioning"
-          ],
+          "enum": ["active", "suspended", "decommissioning"],
           "default": "active"
         },
         "environments": {
           "description": "The environments this project may use (D-11). Listing staging allows apps of the project to opt into it, up to maxApps; each app still chooses with apps[].environments.",
           "type": "array",
           "minItems": 1,
-          "default": [
-            {
-              "name": "prod"
-            }
-          ],
+          "default": [{ "name": "prod" }],
           "items": {
             "type": "object",
-            "required": [
-              "name"
-            ],
+            "required": ["name"],
             "additionalProperties": false,
             "properties": {
-              "name": {
-                "enum": [
-                  "prod",
-                  "staging"
-                ]
-              },
+              "name": { "enum": ["prod", "staging"] },
               "offhours": {
                 "description": "Whether offhours-guard scales this environment down outside business hours. Enforcement is local to the target cluster.",
                 "type": "boolean",
@@ -122,10 +90,7 @@
           "default": [],
           "items": {
             "type": "object",
-            "required": [
-              "name",
-              "type"
-            ],
+            "required": ["name", "type"],
             "additionalProperties": false,
             "properties": {
               "name": {
@@ -134,10 +99,7 @@
               },
               "type": {
                 "description": "fullstack renders frontend + backend components; static renders a single app component.",
-                "enum": [
-                  "fullstack",
-                  "static"
-                ]
+                "enum": ["fullstack", "static"]
               },
               "repoURL": {
                 "description": "Original application repository, created from a template or imported through CMP.",
@@ -160,9 +122,7 @@
               "hostnames": {
                 "description": "Public hostnames this app answers on, keyed by environment. Generated from the naming convention; stated explicitly so probes and tunnel routes read one source.",
                 "type": "object",
-                "additionalProperties": {
-                  "type": "string"
-                }
+                "additionalProperties": { "type": "string" }
               },
               "sourceRevision": {
                 "description": "Immutable application/values Git commit validated by the central import CI. Omit for catalog HEAD behavior.",
@@ -218,14 +178,8 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "gatus": {
-              "type": "boolean",
-              "default": true
-            },
-            "offhoursGuard": {
-              "type": "boolean",
-              "default": true
-            },
+            "gatus": { "type": "boolean", "default": true },
+            "offhoursGuard": { "type": "boolean", "default": true },
             "gateway": {
               "description": "Per-project Gateway and stable Service (D-05). False keeps the project on the shared gateway.",
               "type": "boolean",
