@@ -18,6 +18,11 @@ spec:
     repoURL: https://github.com/3-Istor/app-test
     hostnames:
       prod: app-test-test-hugo.3istor.com
+  - name: optispace
+    type: fullstack
+    repoURL: https://github.com/3-Istor/optispace
+    hostnames:
+      prod: optispace-test-hugo.3istor.com
   features:
     gatus: true
     offhoursGuard: true
