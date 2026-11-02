@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: optispace
+    type: fullstack
+    repoURL: https://github.com/3-Istor/optispace
+    hostnames:
+      prod: optispace-iot.3istor.com
   features:
     gatus: true
     offhoursGuard: true
