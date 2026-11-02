@@ -12,12 +12,7 @@ spec:
   - name: staging
     offhours: true
     maxApps: 1
-  apps:
-  - name: app-test
-    type: fullstack
-    repoURL: https://github.com/3-Istor/app-test
-    hostnames:
-      prod: app-test-test-hugo.3istor.com
+  apps: []
   features:
     gatus: true
     offhoursGuard: true
