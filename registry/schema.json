@@ -59,7 +59,7 @@
           "default": false
         },
         "environments": {
-          "description": "The environments this project may use (D-11). Listing staging allows apps of the project to opt into it, up to maxApps; each app still chooses with apps[].environments.",
+          "description": "The environments this project may use (D-11). Staging runs on up to maxApps apps, one when staging is not listed; each app still chooses with apps[].environments.",
           "type": "array",
           "minItems": 1,
           "default": [{ "name": "prod" }],
@@ -81,7 +81,7 @@
                 "default": 1
               },
               "maxApps": {
-                "description": "How many apps of the project may run this environment. Set by a platform admin: a staging environment roughly doubles an app's daytime memory. Ignored for prod.",
+                "description": "How many apps of the project may run this environment; 0 forbids it. Set by a platform admin: a staging environment roughly doubles an app's daytime memory. Ignored for prod.",
                 "type": "integer",
                 "minimum": 0,
                 "default": 1

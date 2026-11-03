@@ -127,30 +127,26 @@ def check_app_names(label: str, project: str, apps: list[dict]) -> list[str]:
 
 
 def check_environments(label: str, record: dict) -> list[str]:
-    """Staging must be allowed by the project and stay under its app cap."""
-    spec = record.get("spec", {})
-    allowed = {
-        env.get("name"): env
-        for env in spec.get("environments") or [{"name": "prod"}]
-        if isinstance(env, dict)
-    }
-    errors: list[str] = []
+    """Staging stays under the project's app cap. Must match the CMP."""
+    staging = next(
+        (
+            env
+            for env in record.get("spec", {}).get("environments") or []
+            if isinstance(env, dict) and env.get("name") == "staging"
+        ),
+        {},
+    )
+    # A project without a staging entry gets one app; maxApps 0 forbids it.
+    max_apps = staging.get("maxApps", 1)
     staging_apps = [
         app["name"] for app in usable_apps(record) if "staging" in app_environments(app)
     ]
-    if staging_apps and "staging" not in allowed:
-        errors.append(
-            f"{label}: apps {staging_apps} use staging but the project's "
-            f"spec.environments does not list it"
-        )
-    elif staging_apps:
-        max_apps = allowed["staging"].get("maxApps", 1)
-        if len(staging_apps) > max_apps:
-            errors.append(
-                f"{label}: {len(staging_apps)} apps use staging, the project "
-                f"allows {max_apps} (spec.environments[staging].maxApps)"
-            )
-    return errors
+    if len(staging_apps) > max_apps:
+        return [
+            f"{label}: {len(staging_apps)} apps use staging, the project "
+            f"allows {max_apps} (spec.environments[staging].maxApps)"
+        ]
+    return []
 
 
 def check_collisions(records: list[tuple[str, dict]]) -> list[str]:
@@ -376,9 +372,31 @@ def self_test() -> int:
         "65 characters",
     )
     expect(
-        "staging not allowed by the project",
+        "one staging app without a project cap",
         check_environments("a.yaml", staged([{"name": "prod"}], app("web", environments=["prod", "staging"]))),
-        "does not list it",
+    )
+    expect(
+        "two staging apps without a project cap",
+        check_environments(
+            "a.yaml",
+            staged(
+                [{"name": "prod"}],
+                app("web", environments=["prod", "staging"]),
+                app("api", environments=["prod", "staging"]),
+            ),
+        ),
+        "2 apps use staging",
+    )
+    expect(
+        "staging forbidden by a zero cap",
+        check_environments(
+            "a.yaml",
+            staged(
+                [{"name": "prod"}, {"name": "staging", "maxApps": 0}],
+                app("web", environments=["prod", "staging"]),
+            ),
+        ),
+        "allows 0",
     )
     expect(
         "staging over the project cap",

@@ -11,8 +11,8 @@ spec:
   status: active
   deletionProtection: true
 
-  # Listing staging lets apps opt into it, up to maxApps (set by a platform
-  # admin). Each app then chooses with its own environments list.
+  # Staging runs on up to maxApps apps (set by a platform admin), one when
+  # staging is not listed. Each app then chooses with its own environments list.
   environments:
     - name: prod
       offhours: false
