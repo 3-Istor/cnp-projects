@@ -15,6 +15,10 @@ spec:
     repoURL: https://github.com/3-Istor/optispace
     hostnames:
       prod: optispace-iot.3istor.com
+      staging: optispace-iot-staging.3istor.com
+    environments:
+    - prod
+    - staging
   features:
     gatus: true
     offhoursGuard: true
