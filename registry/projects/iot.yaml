@@ -19,6 +19,11 @@ spec:
     environments:
     - prod
     - staging
+  - name: landing
+    type: static
+    repoURL: https://github.com/3-Istor/landing
+    hostnames:
+      prod: landing-iot.3istor.com
   features:
     gatus: true
     offhoursGuard: true
