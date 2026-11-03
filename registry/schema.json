@@ -53,6 +53,11 @@
           "enum": ["active", "suspended", "decommissioning"],
           "default": "active"
         },
+        "deletionProtection": {
+          "description": "Refuses deletion of the project and its apps until a project admin turns it off in the CMP.",
+          "type": "boolean",
+          "default": false
+        },
         "environments": {
           "description": "The environments this project may use (D-11). Listing staging allows apps of the project to opt into it, up to maxApps; each app still chooses with apps[].environments.",
           "type": "array",
