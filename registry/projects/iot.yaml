@@ -29,3 +29,4 @@ spec:
     offhoursGuard: true
     gateway: true
     tunnel: true
+  deletionProtection: true
