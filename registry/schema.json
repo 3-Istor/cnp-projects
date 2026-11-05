@@ -58,6 +58,11 @@
           "type": "boolean",
           "default": false
         },
+        "selfRegistration": {
+          "description": "Opens sign-up in the project realm and lets the project's apps manage organizations. Staging realms never allow sign-up.",
+          "type": "boolean",
+          "default": false
+        },
         "environments": {
           "description": "The environments this project may use (D-11). Staging runs on up to maxApps apps, one when staging is not listed; each app still chooses with apps[].environments.",
           "type": "array",
