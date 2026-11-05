@@ -30,3 +30,4 @@ spec:
     gateway: true
     tunnel: true
   deletionProtection: true
+  selfRegistration: true
