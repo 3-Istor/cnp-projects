@@ -5,3 +5,4 @@ validate:
 
 test:
 	python3 scripts/validate-registry.py --self-test
+	python3 -m unittest discover -s tests

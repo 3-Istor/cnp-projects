@@ -112,7 +112,7 @@
                 "enum": ["fullstack", "static"]
               },
               "repoURL": {
-                "description": "The developer's GitHub repository, created by the app-provision module.",
+                "description": "Original application repository, created from a template or imported through CMP.",
                 "type": "string",
                 "format": "uri"
               },
@@ -133,7 +133,53 @@
                 "description": "Public hostnames this app answers on, keyed by environment. Generated from the naming convention; stated explicitly so probes and tunnel routes read one source.",
                 "type": "object",
                 "additionalProperties": { "type": "string" }
+              },
+              "sourceRevision": {
+                "description": "Immutable application/values Git commit validated by the central import CI. Omit for catalog HEAD behavior.",
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "chartRevision": {
+                "description": "Immutable platform chart Git commit rendered and scanned by the central import CI.",
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "imageTag": {
+                "description": "Unique import image tag. Combined with imageDigest by Argo CD.",
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_.-]+$"
+              },
+              "imageDigest": {
+                "description": "Digest of the image built and scanned by the central CI.",
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
               }
+            },
+            "dependentRequired": {
+              "sourceRevision": [
+                "chartRevision",
+                "imageTag",
+                "imageDigest",
+                "repoURL"
+              ],
+              "chartRevision": [
+                "sourceRevision",
+                "imageTag",
+                "imageDigest",
+                "repoURL"
+              ],
+              "imageTag": [
+                "sourceRevision",
+                "chartRevision",
+                "imageDigest",
+                "repoURL"
+              ],
+              "imageDigest": [
+                "sourceRevision",
+                "chartRevision",
+                "imageTag",
+                "repoURL"
+              ]
             }
           }
         },
