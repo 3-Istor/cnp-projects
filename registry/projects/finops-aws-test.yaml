@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: cost-probe
+    type: static
+    repoURL: https://github.com/3-Istor/cost-probe
+    hostnames:
+      prod: cost-probe-finops-aws-test.3istor.com
   features:
     gatus: true
     offhoursGuard: true
