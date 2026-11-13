@@ -54,6 +54,31 @@ DNS_1035_LABEL = re.compile(r"^[a-z]([-a-z0-9]*[a-z0-9])?$")
 OWN_SERVICE_SUFFIXES = ("", "-stable", "-canary")
 
 
+# Namespaces the platform runs (on-prem: kubectl get ns and K3s k8s/; EKS/GKE:
+# Cloud). cnp-project-base gives a project its Namespace, both AppProjects and
+# an operator Role in every namespace its names derive, so none may be one of
+# these. Mirrors PLATFORM_NAMESPACES in CMP backend/app/services/registry_names.py.
+PLATFORM_NAMESPACES = frozenset(
+    {
+        "3istor-sessions", "argo-rollouts", "argocd", "arcl-cmp", "cert-manager",
+        "cilium-secrets", "cloudflared", "cnp-projects-db", "cnp-vpn", "cnpg-system",
+        "compliance", "default", "demo-app", "dev-sandbox", "envoy-gateway-system",
+        "finops", "garage", "garage-s3", "gateway-infra", "keycloak", "kolla",
+        "kube-node-lease", "kube-public", "kube-system", "kyverno", "linmap-bot",
+        "local-path-storage", "mepa-app", "n8n", "observability", "offhours-guard",
+        "opencost", "qcm", "release-lab", "roadmap", "rook-ceph", "status",
+        "trivy-system", "vault", "vault-secrets-operator", "wireguard",
+    }
+)
+PLATFORM_NAMESPACE_PREFIXES = (
+    "argo-", "argocd-", "arcl-", "cert-manager-", "cilium-", "cnpg-", "envoy-",
+    "gateway-", "keycloak-", "kube-", "kyverno-", "observability-", "rook-",
+    "trivy-", "vault-",
+)
+# AppProjects the platform owns: a project's tenant AppProject takes its name.
+PLATFORM_PROJECT_NAMES = frozenset({"default"})
+
+
 def app_environments(app: dict) -> list[str]:
     environments = app.get("environments") or ["prod"]
     return [env for env in environments if env in ENVIRONMENT_SUFFIX]
@@ -141,6 +166,22 @@ def check_app_names(label: str, project: str, apps: list[dict]) -> list[str]:
             )
     return errors
 
+
+def is_platform_namespace(namespace: str) -> bool:
+    return namespace in PLATFORM_NAMESPACES or namespace.startswith(
+        PLATFORM_NAMESPACE_PREFIXES
+    )
+
+
+def check_platform_names(label: str, project: str, apps: list[dict]) -> list[str]:
+    errors = [
+        f"{label}: {source} would be '{name}', a namespace of the platform"
+        for kind, name, source in derive_names(project, apps)
+        if kind == "namespace" and is_platform_namespace(name)
+    ]
+    if project in PLATFORM_PROJECT_NAMES:
+        errors.append(f"{label}: project '{project}' is an AppProject of the platform")
+    return errors
 
 def check_imported_apps(label: str, apps: list[dict]) -> list[str]:
     """Links target an imported app of the same record; routes need public."""
@@ -319,6 +360,7 @@ def validate() -> list[str]:
         # cnp-clean key off the path, so only real records must match their filename
         # and hold a unique name.
         errors.extend(check_app_names(str(rel), name, usable_apps(record)))
+        errors.extend(check_platform_names(str(rel), name, usable_apps(record)))
         errors.extend(check_environments(str(rel), record))
         errors.extend(check_imported_apps(str(rel), usable_apps(record)))
         errors.extend(check_link_ports(str(rel), name, usable_apps(record)))
@@ -430,6 +472,35 @@ def self_test() -> int:
             ("a.yaml", record("foo", app("web", prod="web-foo.3istor.com"))),
             ("b.yaml", record("bar", app("web", prod="web-bar.3istor.com"))),
         ),
+    )
+    expect(
+        "app whose namespace is a platform namespace",
+        check_platform_names("a.yaml", "envoy", [app("gateway-system")]),
+        "'envoy-gateway-system', a namespace of the platform",
+    )
+    expect(
+        "app whose namespace completes a shared platform namespace",
+        check_platform_names("a.yaml", "cnp", [app("projects-db")]),
+        "'cnp-projects-db', a namespace of the platform",
+    )
+    expect(
+        "project whose system namespace is a platform namespace",
+        check_platform_names("a.yaml", "kube", []),
+        "'kube-system', a namespace of the platform",
+    )
+    expect(
+        "app in a platform namespace family",
+        check_platform_names("a.yaml", "rook", [app("anything")]),
+        "'rook-anything', a namespace of the platform",
+    )
+    expect(
+        "project named after the default AppProject",
+        check_platform_names("a.yaml", "default", []),
+        "an AppProject of the platform",
+    )
+    expect(
+        "project and app only resembling platform names",
+        check_platform_names("a.yaml", "vaulty", [app("status")]),
     )
     expect(
         "app named system",
