@@ -63,6 +63,10 @@
           "type": "boolean",
           "default": false
         },
+        "customerAccess": {
+          "description": "How customers get an account in the project realm, written by the CMP: companies or open. Absent means closed. Replaces selfRegistration.",
+          "enum": ["companies", "open"]
+        },
         "environments": {
           "description": "The environments this project may use (D-11). Staging runs on up to maxApps apps, one when staging is not listed; each app still chooses with apps[].environments.",
           "type": "array",
@@ -108,11 +112,11 @@
                 "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
               },
               "type": {
-                "description": "fullstack renders frontend + backend components; static renders a single app component.",
-                "enum": ["fullstack", "static"]
+                "description": "fullstack renders frontend + backend components; static renders a single app component. service (imported from the user's repository and built by the platform) and backing (a database of the platform catalogue) render one app component whose values live in apps/<project>/<app>/values.yaml of this repository.",
+                "enum": ["fullstack", "static", "service", "backing"]
               },
               "repoURL": {
-                "description": "The developer's GitHub repository, created by the app-provision module.",
+                "description": "The developer's GitHub repository, created by the app-provision module. Never set on service and backing apps: Argo CD does not read their source.",
                 "type": "string",
                 "format": "uri"
               },
@@ -133,8 +137,90 @@
                 "description": "Public hostnames this app answers on, keyed by environment. Generated from the naming convention; stated explicitly so probes and tunnel routes read one source.",
                 "type": "object",
                 "additionalProperties": { "type": "string" }
+              },
+              "public": {
+                "description": "service only: true gives the app a route on hostnames.prod. Imported apps are private by default.",
+                "type": "boolean",
+                "default": false
+              },
+              "source": {
+                "description": "service only: what the image was built from. Provenance for the CMP and the build, never read by Argo CD.",
+                "type": "object",
+                "required": ["repo", "sha"],
+                "additionalProperties": false,
+                "properties": {
+                  "repo": {
+                    "type": "string",
+                    "format": "uri",
+                    "pattern": "^https://[a-z0-9.-]+(/[A-Za-z0-9_.-]+){2,}$"
+                  },
+                  "path": {
+                    "description": "Folder of the service in the repository, empty for the root.",
+                    "type": "string",
+                    "pattern": "^([A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*)?$"
+                  },
+                  "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+                }
+              },
+              "dependsOn": {
+                "description": "service and backing only: apps of the same project this app calls. Each link becomes an ExternalName Service named alias in this app's namespace, pointing at the target app.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["app", "port"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "app": { "type": "string" },
+                    "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+                    "alias": {
+                      "description": "The name the app resolves, a DNS-1123 label. Defaults to the target app name.",
+                      "type": "string",
+                      "maxLength": 63,
+                      "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+                    }
+                  }
+                }
               }
-            }
+            },
+            "allOf": [
+              {
+                "if": { "properties": { "type": { "enum": ["fullstack", "static"] } } },
+                "then": {
+                  "not": {
+                    "anyOf": [
+                      { "required": ["public"] },
+                      { "required": ["source"] },
+                      { "required": ["dependsOn"] }
+                    ]
+                  }
+                }
+              },
+              {
+                "if": { "properties": { "type": { "enum": ["service", "backing"] } } },
+                "then": {
+                  "not": { "required": ["repoURL"] },
+                  "properties": {
+                    "name": { "maxLength": 40 },
+                    "environments": { "maxItems": 1 }
+                  }
+                }
+              },
+              {
+                "if": { "properties": { "type": { "const": "service" } } },
+                "then": { "required": ["source"] }
+              },
+              {
+                "if": { "properties": { "type": { "const": "backing" } } },
+                "then": {
+                  "not": {
+                    "anyOf": [
+                      { "required": ["source"] },
+                      { "required": ["public"] }
+                    ]
+                  }
+                }
+              }
+            ]
           }
         },
         "features": {

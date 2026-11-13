@@ -8,7 +8,12 @@ It also rejects records whose derived Kubernetes and Argo CD names (namespaces,
 AppProjects, Applications, hostnames) collide with another source, since a collision
 lets one project deploy into another's namespace.
 
-``--self-test`` runs the collision checks against in-memory fixtures.
+Imported apps (types service and backing) get two more checks: their dependsOn
+links stay inside the project and cannot shadow a platform name, and a live
+record's imported app has its values file, apps/<project>/<app>/values.yaml,
+which is what Argo CD renders it from.
+
+``--self-test`` runs the collision and link checks against in-memory fixtures.
 
 Exits non-zero on the first failure so CI fails loudly.
 """
@@ -26,6 +31,7 @@ from jsonschema import Draft202012Validator
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_PATH = REPO_ROOT / "registry" / "schema.json"
+VALUES_DIR = REPO_ROOT / "apps"
 RECORD_DIRS = (
     REPO_ROOT / "registry" / "projects",
     REPO_ROOT / "registry" / "examples",
@@ -36,6 +42,11 @@ FULLSTACK_COMPONENTS = ("frontend", "backend")
 # Prod keeps the names every existing app already has; staging objects carry a
 # suffix. Must match the ApplicationSets and cnp-project-base.
 ENVIRONMENT_SUFFIX = {"prod": "", "staging": "-stg"}
+IMPORTED_TYPES = ("service", "backing")
+# An alias is a Service name in the caller's namespace: these would shadow the
+# names an app uses to reach the platform (D18). Dots never pass the schema, so
+# no alias can spell a FQDN such as vault.vault.svc.cluster.local.
+RESERVED_ALIASES = frozenset({"kubernetes", "default", "vault", "keycloak", "argocd"})
 
 
 def app_environments(app: dict) -> list[str]:
@@ -126,6 +137,66 @@ def check_app_names(label: str, project: str, apps: list[dict]) -> list[str]:
     return errors
 
 
+def check_imported_apps(label: str, apps: list[dict]) -> list[str]:
+    """Links target an imported app of the same record; routes need public."""
+    errors: list[str] = []
+    types = {app["name"]: app.get("type") for app in apps}
+    for app in apps:
+        if app.get("type") not in IMPORTED_TYPES:
+            continue
+        app_name = app["name"]
+        if app.get("public") and not (app.get("hostnames") or {}).get("prod"):
+            errors.append(f"{label}: app '{app_name}' is public but has no hostnames.prod")
+        if not app.get("public") and app.get("hostnames"):
+            errors.append(
+                f"{label}: app '{app_name}' has hostnames but is not public: "
+                f"only a public imported app gets a route"
+            )
+        aliases: set[str] = set()
+        for link in app.get("dependsOn") or []:
+            if not isinstance(link, dict) or not isinstance(link.get("app"), str):
+                continue
+            target = link["app"]
+            alias = link.get("alias") or target
+            if target == app_name:
+                errors.append(f"{label}: app '{app_name}' depends on itself")
+            elif target not in types:
+                errors.append(
+                    f"{label}: app '{app_name}' depends on '{target}', which is not an "
+                    f"app of this project"
+                )
+            elif types[target] not in IMPORTED_TYPES:
+                errors.append(
+                    f"{label}: app '{app_name}' depends on '{target}' of type "
+                    f"{types[target]}: links target service or backing apps only"
+                )
+            if alias in RESERVED_ALIASES:
+                errors.append(f"{label}: app '{app_name}' uses reserved alias '{alias}'")
+            if alias == app_name:
+                errors.append(
+                    f"{label}: app '{app_name}' uses its own name as alias '{alias}', "
+                    f"which is its own Service"
+                )
+            if alias in aliases:
+                errors.append(f"{label}: app '{app_name}' declares alias '{alias}' twice")
+            aliases.add(alias)
+    return errors
+
+
+def check_values_files(label: str, project: str, apps: list[dict]) -> list[str]:
+    """Argo CD renders an imported app from its values file: it must exist (D2)."""
+    errors: list[str] = []
+    for app in apps:
+        if app.get("type") not in IMPORTED_TYPES:
+            continue
+        values = VALUES_DIR / project / app["name"] / "values.yaml"
+        if not values.is_file():
+            errors.append(
+                f"{label}: app '{app['name']}' has no {values.relative_to(REPO_ROOT)}"
+            )
+    return errors
+
+
 def check_environments(label: str, record: dict) -> list[str]:
     """Staging stays under the project's app cap. Must match the CMP."""
     staging = next(
@@ -206,9 +277,11 @@ def validate() -> list[str]:
         # and hold a unique name.
         errors.extend(check_app_names(str(rel), name, usable_apps(record)))
         errors.extend(check_environments(str(rel), record))
+        errors.extend(check_imported_apps(str(rel), usable_apps(record)))
 
         if path.parent.name == "projects":
             live.append((str(rel), record))
+            errors.extend(check_values_files(str(rel), name, usable_apps(record)))
             if name != path.stem:
                 errors.append(
                     f"{rel}: metadata.name is '{name}' but the filename says '{path.stem}'"
@@ -421,6 +494,145 @@ def self_test() -> int:
             ),
         ),
     )
+
+    def imported(name: str, type_: str = "service", **fields) -> dict:
+        return {"name": name, "type": type_, **fields}
+
+    def link(target: str, port: int = 8080, alias: str | None = None) -> dict:
+        result = {"app": target, "port": port}
+        if alias:
+            result["alias"] = alias
+        return result
+
+    expect(
+        "service linked to a backing app of the same project",
+        check_imported_apps(
+            "a.yaml",
+            [
+                imported("api", dependsOn=[link("mongodb", 27017), link("cache", 6379, "redis")]),
+                imported("mongodb", "backing"),
+                imported("cache", "backing"),
+            ],
+        ),
+    )
+    expect(
+        "link to an app outside the project",
+        check_imported_apps("a.yaml", [imported("api", dependsOn=[link("vault", 8200, "secrets")])]),
+        "'vault', which is not an app of this project",
+    )
+    expect(
+        "link to a template app",
+        check_imported_apps(
+            "a.yaml", [imported("api", dependsOn=[link("web")]), app("web", "fullstack")]
+        ),
+        "of type fullstack",
+    )
+    expect(
+        "link to itself",
+        check_imported_apps("a.yaml", [imported("api", dependsOn=[link("api")])]),
+        "depends on itself",
+    )
+    for reserved in sorted(RESERVED_ALIASES):
+        expect(
+            f"reserved alias {reserved}",
+            check_imported_apps(
+                "a.yaml",
+                [imported("api", dependsOn=[link("db", 5432, reserved)]), imported("db", "backing")],
+            ),
+            f"reserved alias '{reserved}'",
+        )
+    expect(
+        "alias equal to the app's own name",
+        check_imported_apps(
+            "a.yaml",
+            [imported("api", dependsOn=[link("db", 5432, "api")]), imported("db", "backing")],
+        ),
+        "its own Service",
+    )
+    expect(
+        "alias declared twice",
+        check_imported_apps(
+            "a.yaml",
+            [
+                imported("api", dependsOn=[link("db", 5432, "store"), link("cache", 6379, "store")]),
+                imported("db", "backing"),
+                imported("cache", "backing"),
+            ],
+        ),
+        "alias 'store' twice",
+    )
+    expect(
+        "public service without a hostname",
+        check_imported_apps("a.yaml", [imported("api", public=True)]),
+        "no hostnames.prod",
+    )
+    expect(
+        "private service with a hostname",
+        check_imported_apps("a.yaml", [imported("api", hostnames={"prod": "api-foo.3istor.com"})]),
+        "not public",
+    )
+    expect(
+        "public service with its hostname",
+        check_imported_apps(
+            "a.yaml", [imported("api", public=True, hostnames={"prod": "api-foo.3istor.com"})]
+        ),
+    )
+    expect(
+        "imported app without its values file",
+        check_values_files("a.yaml", "no-such-project", [imported("api")]),
+        "apps/no-such-project/api/values.yaml",
+    )
+    expect(
+        "template apps need no values file here",
+        check_values_files("a.yaml", "no-such-project", [app("web")]),
+    )
+
+    validator = Draft202012Validator(json.loads(SCHEMA_PATH.read_text(encoding="utf-8")))
+    sha = "0123456789abcdef0123456789abcdef01234567"
+    source = {"repo": "https://github.com/acme/shop", "path": "services/api", "sha": sha}
+
+    def schema_errors(*apps: dict) -> list[str]:
+        record = {
+            "apiVersion": "cnp.3istor.com/v1alpha1",
+            "kind": "ProjectRecord",
+            "metadata": {"name": "foo"},
+            "spec": {"targetCloud": "onprem", "apps": list(apps)},
+        }
+        return [error.message for error in validator.iter_errors(record)]
+
+    def refused(description: str, errors: list[str]) -> None:
+        if not errors:
+            failures.append(f"{description}: expected a schema error, got none")
+
+    expect(
+        "schema accepts a service and a backing app",
+        schema_errors(
+            imported("api", source=source, dependsOn=[link("mongodb", 27017)]),
+            imported("mongodb", "backing"),
+            imported(
+                "web",
+                source=source,
+                public=True,
+                hostnames={"prod": "web-foo.3istor.com"},
+            ),
+        ),
+    )
+    expect(
+        "schema keeps template apps valid",
+        schema_errors(app("web", "fullstack"), app("docs")),
+    )
+    refused("service with a repoURL", schema_errors(imported("api", source=source, repoURL="https://github.com/acme/shop")))
+    refused("service without a source", schema_errors(imported("api")))
+    refused("source sha that is not a full commit", schema_errors(imported("api", source={**source, "sha": "abc123"})))
+    refused("backing app with a source", schema_errors(imported("db", "backing", source=source)))
+    refused("public backing app", schema_errors(imported("db", "backing", public=True)))
+    refused("imported app on staging", schema_errors(imported("db", "backing", environments=["prod", "staging"])))
+    refused("imported app name over 40 characters", schema_errors(imported("d" * 41, "backing")))
+    refused("dependsOn on a template app", schema_errors({**app("web"), "dependsOn": [link("db")]}))
+    refused("public on a template app", schema_errors({**app("web"), "public": True}))
+    refused("alias with dots", schema_errors(imported("api", source=source, dependsOn=[link("db", 5432, "vault.vault.svc.cluster.local")])))
+    refused("link without a port", schema_errors(imported("api", source=source, dependsOn=[{"app": "db"}])))
+    refused("port out of range", schema_errors(imported("api", source=source, dependsOn=[link("db", 70000)])))
 
     if failures:
         for failure in failures:
