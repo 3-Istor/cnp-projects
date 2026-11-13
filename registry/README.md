@@ -92,8 +92,11 @@ Elasticsearch). Both render one `app` component, like `static`, but from differe
   app has no values file: the CMP writes the file and the record entry in one commit (D2).
 - **`dependsOn` stays in the project.** Each link becomes an ExternalName Service named
   `alias` in the app's namespace, pointing at the target's Service. The target must be a
-  `service` or `backing` app of the same record; the alias cannot be the app's own name or
-  `kubernetes`, `default`, `vault`, `keycloak`, `argocd`, and cannot contain dots (D18).
+  `service` or `backing` app of the same record; the alias cannot be the app's own name,
+  `<app>-stable`, `<app>-canary`, `kubernetes`, `default`, `vault`, `keycloak`, `argocd`, and
+  cannot contain dots (D18). App names and aliases start with a letter (DNS-1035: they are
+  Service names). When the target's values file is here, `port` must be one of its
+  `service.ports[].port`.
 - **Prod only** for now, and a backing app is never public and has no `source`.
 
 ## Rules

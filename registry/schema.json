@@ -170,13 +170,13 @@
                   "required": ["app", "port"],
                   "additionalProperties": false,
                   "properties": {
-                    "app": { "type": "string" },
+                    "app": { "type": "string", "pattern": "^[a-z]([-a-z0-9]*[a-z0-9])?$" },
                     "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
                     "alias": {
-                      "description": "The name the app resolves, a DNS-1123 label. Defaults to the target app name.",
+                      "description": "The name the app resolves, a Service name: a DNS-1035 label, so it starts with a letter. Defaults to the target app name.",
                       "type": "string",
                       "maxLength": 63,
-                      "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+                      "pattern": "^[a-z]([-a-z0-9]*[a-z0-9])?$"
                     }
                   }
                 }
@@ -200,7 +200,7 @@
                 "then": {
                   "not": { "required": ["repoURL"] },
                   "properties": {
-                    "name": { "maxLength": 40 },
+                    "name": { "maxLength": 40, "pattern": "^[a-z]([-a-z0-9]*[a-z0-9])?$" },
                     "environments": { "maxItems": 1 }
                   }
                 }
