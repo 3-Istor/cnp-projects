@@ -35,6 +35,8 @@ Lire [le contrat du registre](registry/README.md) et [son schéma](registry/sche
 make validate
 ```
 
+Les valeurs Helm des apps importées (types `service` et `backing`) vivent dans `apps/<projet>/<app>/values.yaml`, écrites par le CMP ; Argo CD ne lit jamais le dépôt source de ces apps.
+
 Ne pas placer les ProjectRecord de `registry/projects/` dans `projects/` : ce dernier est lu comme des manifests Kubernetes par l’Application Argo CD historique.
 
 Le cloud cible doit correspondre à un cluster enregistré dans Argo CD. CMP interdit le changement en place de `targetCloud` ; une édition Git ne constitue pas une migration des ressources.

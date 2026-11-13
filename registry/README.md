@@ -65,6 +65,40 @@ spec:
 A fuller record, exercising the Prod/Staging seam and the per-project add-ons, is in
 [`examples/`](examples/).
 
+## Imported apps
+
+`type: service` is an app imported from a user's repository and built by the platform;
+`type: backing` is a database of the platform catalogue (MongoDB, Redis, Neo4j,
+Elasticsearch). Both render one `app` component, like `static`, but from different inputs:
+
+```yaml
+  apps:
+    - name: user-service
+      type: service
+      public: false              # true gives a route on hostnames.prod
+      source:                    # provenance only, Argo CD never reads it
+        repo: https://github.com/acme/tinyx
+        path: tinyx/user-service
+        sha: 3f6c2a9d8e1b4c7a0f5e2d9c8b7a6f5e4d3c2b1a
+      dependsOn:                 # apps of this project it calls
+        - app: mongodb
+          port: 27017            # alias defaults to the app name
+    - name: mongodb
+      type: backing
+```
+
+- **No `repoURL`.** The values live here, in `apps/<project>/<app>/values.yaml`, written by
+  the CMP with the image digest (D1). The validator refuses a live record whose imported
+  app has no values file: the CMP writes the file and the record entry in one commit (D2).
+- **`dependsOn` stays in the project.** Each link becomes an ExternalName Service named
+  `alias` in the app's namespace, pointing at the target's Service. The target must be a
+  `service` or `backing` app of the same record; the alias cannot be the app's own name,
+  `<app>-stable`, `<app>-canary`, `kubernetes`, `default`, `vault`, `keycloak`, `argocd`, and
+  cannot contain dots (D18). App names and aliases start with a letter (DNS-1035: they are
+  Service names). When the target's values file is here, `port` must be one of its
+  `service.ports[].port`.
+- **Prod only** for now, and a backing app is never public and has no `source`.
+
 ## Rules
 
 - **The filename must match `metadata.name`.** The ApplicationSet and `cnp-clean` both
@@ -87,4 +121,5 @@ python3 scripts/validate-registry.py
 ```
 
 It checks every record against `schema.json`, that the filename matches `metadata.name`,
-and that no two records claim the same name. CI runs it on every push and pull request.
+that no two records claim the same name, the `dependsOn` links of imported apps, and that
+each imported app of a live record has its values file. CI runs it on every push and pull request.

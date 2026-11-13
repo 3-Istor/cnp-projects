@@ -38,6 +38,33 @@ spec:
       hostnames:
         prod: atlas-docs-atlas.3istor.com
 
+    # Imported apps (CNP-239): the platform builds the image from source, the
+    # CMP writes apps/atlas/<app>/values.yaml in this repo, and Argo CD never
+    # reads the source repo. dependsOn links stay inside the project (CNP-240).
+    - name: user-service
+      type: service
+      source:
+        repo: https://github.com/acme/tinyx
+        path: tinyx/user-service
+        sha: 3f6c2a9d8e1b4c7a0f5e2d9c8b7a6f5e4d3c2b1a
+      dependsOn:
+        - app: mongodb
+          port: 27017
+        - app: atlas-gateway
+          port: 8080
+          alias: gateway
+    - name: atlas-gateway
+      type: service
+      public: true
+      source:
+        repo: https://github.com/acme/tinyx
+        path: tinyx/gateway
+        sha: 3f6c2a9d8e1b4c7a0f5e2d9c8b7a6f5e4d3c2b1a
+      hostnames:
+        prod: atlas-gateway-atlas.3istor.com
+    - name: mongodb
+      type: backing
+
   features:
     gatus: true
     offhoursGuard: true
