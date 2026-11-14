@@ -33,6 +33,8 @@ env:
   value: 512m
 - name: NEO4J_server_memory_pagecache_size
   value: 128m
+- name: NEO4J_server_config_strict__validation_enabled
+  value: 'false'
 workload:
   kind: StatefulSet
   probes:
