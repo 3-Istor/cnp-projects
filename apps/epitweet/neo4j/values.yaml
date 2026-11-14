@@ -67,5 +67,5 @@ workload:
     size: 1Gi
 secrets:
   enabled: true
-  vaultPath: project-epitweet/system/imports/neo4j
+  vaultPath: project-epitweet/neo4j/imports
   vaultRole: project-epitweet-system-role

@@ -30,7 +30,7 @@ env:
   value: http://user-service:8081/
 secrets:
   enabled: true
-  vaultPath: project-epitweet/system/imports/timeline-service
+  vaultPath: project-epitweet/timeline-service/imports
   vaultRole: project-epitweet-system-role
 workload:
   probes:

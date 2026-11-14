@@ -28,7 +28,7 @@ env:
   value: epitweet_social_graph
 secrets:
   enabled: true
-  vaultPath: project-epitweet/system/imports/social-graph-service
+  vaultPath: project-epitweet/social-graph-service/imports
   vaultRole: project-epitweet-system-role
 workload:
   probes:

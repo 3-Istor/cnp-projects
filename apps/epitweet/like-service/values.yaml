@@ -28,7 +28,7 @@ env:
   value: http://social-graph-service:8084/
 secrets:
   enabled: true
-  vaultPath: project-epitweet/system/imports/like-service
+  vaultPath: project-epitweet/like-service/imports
   vaultRole: project-epitweet-system-role
 workload:
   probes:

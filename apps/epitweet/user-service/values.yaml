@@ -26,7 +26,7 @@ env:
   value: redis://redis:6379
 secrets:
   enabled: true
-  vaultPath: project-epitweet/system/imports/user-service
+  vaultPath: project-epitweet/user-service/imports
   vaultRole: project-epitweet-system-role
 workload:
   probes:
