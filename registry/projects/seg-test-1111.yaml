@@ -9,12 +9,7 @@ spec:
   status: active
   environments:
   - name: prod
-  apps:
-  - name: perm-check
-    type: static
-    repoURL: https://github.com/3-Istor/perm-check
-    hostnames:
-      prod: perm-check-seg-test-1111.3istor.com
+  apps: []
   features:
     gatus: true
     offhoursGuard: true
