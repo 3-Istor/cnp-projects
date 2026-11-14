@@ -1,0 +1,62 @@
+# Written by the CMP from the import of 3-Istor/epitweet at d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2.
+# Change it from the CMP: the next build rewrites this file.
+image:
+  repository: docker.io/library/elasticsearch
+  tag: 8.19.25
+  digest: sha256:ef44866274bd7cb2c644f4f6657ce0832819f662adb66b2769d0ba5dabad77d6
+service:
+  ports:
+  - name: http
+    port: 9200
+    targetPort: 9200
+resources:
+  requests:
+    cpu: 250m
+    memory: 1Gi
+  limits:
+    cpu: '1'
+    memory: 1280Mi
+monitoring:
+  enabled: false
+env:
+- name: discovery.type
+  value: single-node
+- name: xpack.security.enabled
+  value: "false"
+- name: node.store.allow_mmap
+  value: "false"
+- name: ES_JAVA_OPTS
+  value: -Xms512m -Xmx512m
+workload:
+  kind: StatefulSet
+  probes:
+    startup:
+      httpGet:
+        path: /_cluster/health?local=true
+        port: 9200
+      periodSeconds: 10
+      failureThreshold: 30
+    liveness:
+      tcpSocket:
+        port: 9200
+      periodSeconds: 10
+    readiness:
+      httpGet:
+        path: /_cluster/health?local=true
+        port: 9200
+      periodSeconds: 5
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+  persistence:
+    mountPath: /usr/share/elasticsearch/data
+    size: 2Gi

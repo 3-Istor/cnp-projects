@@ -1,0 +1,55 @@
+# Written by the CMP from the import of 3-Istor/epitweet at d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2.
+# Change it from the CMP: the next build rewrites this file.
+image:
+  repository: docker.io/library/redis
+  tag: 8.2-alpine
+  digest: sha256:da23c2478319ceb4903857d77a2fd7aa5137d9e9d4c8165dafbacedac6403e95
+service:
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: 6379
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+monitoring:
+  enabled: false
+workload:
+  kind: StatefulSet
+  args:
+  - redis-server
+  - --appendonly
+  - "yes"
+  - --dir
+  - /data
+  probes:
+    liveness:
+      tcpSocket:
+        port: 6379
+      initialDelaySeconds: 10
+      periodSeconds: 10
+    readiness:
+      exec:
+        command:
+        - redis-cli
+        - ping
+      periodSeconds: 5
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+  persistence:
+    mountPath: /data
+    size: 1Gi

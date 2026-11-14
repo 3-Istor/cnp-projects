@@ -9,7 +9,119 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: mongodb
+    type: backing
+  - name: redis
+    type: backing
+  - name: neo4j
+    type: backing
+  - name: elasticsearch
+    type: backing
+  - name: user-service
+    type: service
+    public: false
+    source:
+      repo: https://github.com/3-Istor/epitweet
+      path: tinyx/user-service
+      sha: d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2
+    dependsOn:
+    - app: mongodb
+      port: 27017
+    - app: redis
+      port: 6379
+  - name: post-service
+    type: service
+    public: false
+    source:
+      repo: https://github.com/3-Istor/epitweet
+      path: tinyx/post-service
+      sha: d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2
+    dependsOn:
+    - app: mongodb
+      port: 27017
+    - app: redis
+      port: 6379
+    - app: social-graph-service
+      port: 8084
+  - name: like-service
+    type: service
+    public: false
+    source:
+      repo: https://github.com/3-Istor/epitweet
+      path: tinyx/like-service
+      sha: d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2
+    dependsOn:
+    - app: mongodb
+      port: 27017
+    - app: redis
+      port: 6379
+    - app: social-graph-service
+      port: 8084
+  - name: social-graph-service
+    type: service
+    public: false
+    source:
+      repo: https://github.com/3-Istor/epitweet
+      path: tinyx/socialgraph-service
+      sha: d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2
+    dependsOn:
+    - app: mongodb
+      port: 27017
+    - app: neo4j
+      port: 7687
+    - app: redis
+      port: 6379
+  - name: timeline-service
+    type: service
+    public: false
+    source:
+      repo: https://github.com/3-Istor/epitweet
+      path: tinyx/timeline-service
+      sha: d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2
+    dependsOn:
+    - app: mongodb
+      port: 27017
+    - app: redis
+      port: 6379
+    - app: social-graph-service
+      port: 8084
+    - app: user-service
+      port: 8081
+  - name: frontend
+    type: service
+    public: true
+    hostnames:
+      prod: frontend-epitweet.3istor.com
+    source:
+      repo: https://github.com/3-Istor/epitweet
+      path: frontend
+      sha: d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2
+    dependsOn:
+    - app: like-service
+      port: 8083
+    - app: post-service
+      port: 8082
+    - app: search-service
+      port: 8086
+    - app: social-graph-service
+      port: 8084
+    - app: timeline-service
+      port: 8085
+    - app: user-service
+      port: 8081
+  - name: search-service
+    type: service
+    public: false
+    source:
+      repo: https://github.com/3-Istor/epitweet
+      path: tinyx/search-service
+      sha: d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2
+    dependsOn:
+    - app: elasticsearch
+      port: 9200
+    - app: redis
+      port: 6379
   features:
     gatus: true
     offhoursGuard: true

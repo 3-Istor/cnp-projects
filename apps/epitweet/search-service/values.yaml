@@ -1,0 +1,53 @@
+# Written by the CMP from the import of 3-Istor/epitweet at d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2.
+# Change it from the CMP: the next build rewrites this file.
+image:
+  repository: ghcr.io/3-istor/imports/epitweet/search-service
+  digest: sha256:e723cb8c2190600b579b4e2da1080801eb6fe2a1de1219e50713d8f7c3ff4da8
+service:
+  ports:
+  - name: http
+    port: 8086
+    targetPort: 8086
+resources:
+  requests:
+    cpu: 100m
+    memory: 192Mi
+  limits:
+    cpu: '1'
+    memory: 384Mi
+monitoring:
+  enabled: false
+env:
+- name: QUARKUS_HTTP_PORT
+  value: '8086'
+- name: QUARKUS_ELASTICSEARCH_HOSTS
+  value: elasticsearch:9200
+- name: QUARKUS_REDIS_HOSTS
+  value: redis://redis:6379
+workload:
+  probes:
+    liveness:
+      tcpSocket:
+        port: 8086
+      periodSeconds: 10
+    readiness:
+      tcpSocket:
+        port: 8086
+      periodSeconds: 5
+    startup:
+      tcpSocket:
+        port: 8086
+      periodSeconds: 5
+      failureThreshold: 36
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 185
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+  tmpDirs:
+  - /tmp

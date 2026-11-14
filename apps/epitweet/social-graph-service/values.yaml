@@ -1,0 +1,59 @@
+# Written by the CMP from the import of 3-Istor/epitweet at d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2.
+# Change it from the CMP: the next build rewrites this file.
+image:
+  repository: ghcr.io/3-istor/imports/epitweet/social-graph-service
+  digest: sha256:5994ee79d1b812173744e339bba0cfe5b0a0957877d29daa7f5ab0ad796d1f23
+service:
+  ports:
+  - name: http
+    port: 8084
+    targetPort: 8084
+resources:
+  requests:
+    cpu: 100m
+    memory: 192Mi
+  limits:
+    cpu: '1'
+    memory: 384Mi
+monitoring:
+  enabled: false
+env:
+- name: QUARKUS_HTTP_PORT
+  value: '8084'
+- name: QUARKUS_NEO4J_URI
+  value: bolt://neo4j:7687
+- name: QUARKUS_REDIS_HOSTS
+  value: redis://redis:6379
+- name: QUARKUS_MONGODB_DATABASE
+  value: epitweet_social_graph
+secrets:
+  enabled: true
+  vaultPath: project-epitweet/system/imports/social-graph-service
+  vaultRole: project-epitweet-system-role
+workload:
+  probes:
+    liveness:
+      tcpSocket:
+        port: 8084
+      periodSeconds: 10
+    readiness:
+      tcpSocket:
+        port: 8084
+      periodSeconds: 5
+    startup:
+      tcpSocket:
+        port: 8084
+      periodSeconds: 5
+      failureThreshold: 36
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 185
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+  tmpDirs:
+  - /tmp

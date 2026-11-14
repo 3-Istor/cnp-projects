@@ -1,0 +1,40 @@
+# Written by the CMP from the import of 3-Istor/epitweet at d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2.
+# Change it from the CMP: the next build rewrites this file.
+image:
+  repository: ghcr.io/3-istor/imports/epitweet/frontend
+  digest: sha256:af6d9470b415109b551d49c310d95f147ef7f5a3451f518c69ec05a556387498
+service:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+resources:
+  requests:
+    cpu: 100m
+    memory: 32Mi
+  limits:
+    cpu: 500m
+    memory: 64Mi
+monitoring:
+  enabled: true
+  path: /
+workload:
+  probes:
+    liveness:
+      tcpSocket:
+        port: 80
+      periodSeconds: 10
+    readiness:
+      tcpSocket:
+        port: 80
+      periodSeconds: 5
+    startup:
+      tcpSocket:
+        port: 80
+      periodSeconds: 5
+      failureThreshold: 12
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
