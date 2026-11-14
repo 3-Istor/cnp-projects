@@ -27,7 +27,6 @@ env:
 secrets:
   enabled: true
   vaultPath: project-epitweet/user-service/imports
-  vaultRole: project-epitweet-system-role
 workload:
   probes:
     liveness:

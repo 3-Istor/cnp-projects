@@ -68,4 +68,3 @@ workload:
 secrets:
   enabled: true
   vaultPath: project-epitweet/neo4j/imports
-  vaultRole: project-epitweet-system-role
