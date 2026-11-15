@@ -2,7 +2,7 @@
 # Change it from the CMP: the next build rewrites this file.
 image:
   repository: ghcr.io/3-istor/imports/epitweet/social-graph-service
-  digest: sha256:5994ee79d1b812173744e339bba0cfe5b0a0957877d29daa7f5ab0ad796d1f23
+  digest: sha256:622fc4659dcab7a5a5530aa4cbbfc3d7c36966b623db98c9e94c817fba65debd
 service:
   ports:
   - name: http
