@@ -2,7 +2,7 @@
 # Change it from the CMP: the next build rewrites this file.
 image:
   repository: ghcr.io/3-istor/imports/epitweet/like-service
-  digest: sha256:be2ba273acfaca150244f27664268395f900f91372de56bb4401461f4b01abde
+  digest: sha256:1c0aa434e0b70dab8b591d71f52ff4c8fd6b27a59c3fc75ddf363218bd2adf34
 service:
   ports:
   - name: http

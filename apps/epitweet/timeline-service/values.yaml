@@ -2,7 +2,7 @@
 # Change it from the CMP: the next build rewrites this file.
 image:
   repository: ghcr.io/3-istor/imports/epitweet/timeline-service
-  digest: sha256:70938d2d54e1ae9fb670fa9b70bc629ad2fbc719bb93432e168f8d52bd19d9a1
+  digest: sha256:d5d7ffa89502324ca7adb0914873659a143aba2a339ad085129ddd26cb36d4af
 service:
   ports:
   - name: http
