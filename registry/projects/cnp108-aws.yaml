@@ -15,6 +15,11 @@ spec:
     repoURL: https://github.com/3-Istor/app-html-css-aws
     hostnames:
       prod: app-html-css-aws-cnp108-aws.3istor.com
+  - name: app-fastapi-react-aws
+    type: fullstack
+    repoURL: https://github.com/3-Istor/app-fastapi-react-aws
+    hostnames:
+      prod: app-fastapi-react-aws-cnp108-aws.3istor.com
   features:
     gatus: true
     offhoursGuard: true
