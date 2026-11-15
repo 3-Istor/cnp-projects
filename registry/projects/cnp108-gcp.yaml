@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: app-html-css-gcp
+    type: static
+    repoURL: https://github.com/3-Istor/app-html-css-gcp
+    hostnames:
+      prod: app-html-css-gcp-cnp108-gcp.3istor.com
   features:
     gatus: true
     offhoursGuard: true
