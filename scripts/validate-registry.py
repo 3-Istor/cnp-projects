@@ -88,6 +88,7 @@ def derive_names(project: str, apps: list[dict]) -> list[tuple[str, str, str]]:
     """Return (kind, name, source) for every name the ApplicationSets derive."""
     names = [
         ("namespace", f"{project}-system", "the project system namespace"),
+        ("namespace", f"{project}-backups", "the project backups namespace"),
         ("appproject", project, "the project AppProject"),
         ("appproject", f"{project}-platform", "the platform AppProject"),
         ("application", f"{project}-appproject", "the appproject Application"),
@@ -147,11 +148,6 @@ def check_app_names(label: str, project: str, apps: list[dict]) -> list[str]:
     errors: list[str] = []
     for app in apps:
         app_name = app["name"]
-        if app_name == "backups":
-            errors.append(
-                f"{label}: app 'backups' is reserved: namespace '{project}-backups' "
-                f"holds the project's backup buckets"
-            )
         if app_name == "system":
             errors.append(
                 f"{label}: app 'system' is reserved: namespace '{project}-system' "
@@ -423,8 +419,19 @@ def self_test() -> int:
 
     expect(
         "app named backups",
-        check_app_names("a.yaml", "foo", [app("backups")]),
-        "app 'backups' is reserved",
+        collisions(("a.yaml", record("foo", app("backups")))),
+        "namespace 'foo-backups'",
+        "the project backups namespace",
+    )
+    expect(
+        "app namespace equals another project's backups namespace",
+        collisions(
+            ("a.yaml", record("my", app("foo-backups"))),
+            ("my-foo.yaml", record("my-foo")),
+        ),
+        "namespace 'my-foo-backups'",
+        "a.yaml",
+        "my-foo.yaml",
     )
     expect(
         "app namespace equals another project's system namespace",
