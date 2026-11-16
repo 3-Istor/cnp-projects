@@ -147,6 +147,11 @@ def check_app_names(label: str, project: str, apps: list[dict]) -> list[str]:
     errors: list[str] = []
     for app in apps:
         app_name = app["name"]
+        if app_name == "backups":
+            errors.append(
+                f"{label}: app 'backups' is reserved: namespace '{project}-backups' "
+                f"holds the project's backup buckets"
+            )
         if app_name == "system":
             errors.append(
                 f"{label}: app 'system' is reserved: namespace '{project}-system' "
@@ -416,6 +421,11 @@ def self_test() -> int:
         if not fragments and errors:
             failures.append(f"{description}: expected no error, got {errors}")
 
+    expect(
+        "app named backups",
+        check_app_names("a.yaml", "foo", [app("backups")]),
+        "app 'backups' is reserved",
+    )
     expect(
         "app namespace equals another project's system namespace",
         collisions(
