@@ -20,6 +20,11 @@ spec:
     repoURL: https://github.com/3-Istor/app-fastapi-react-aws
     hostnames:
       prod: app-fastapi-react-aws-cnp108-aws.3istor.com
+  - name: bkp-test
+    type: fullstack
+    repoURL: https://github.com/3-Istor/bkp-test
+    hostnames:
+      prod: bkp-test-cnp108-aws.3istor.com
   features:
     gatus: true
     offhoursGuard: true
