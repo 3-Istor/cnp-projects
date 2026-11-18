@@ -334,6 +334,36 @@ def load_records() -> list[tuple[Path, dict]]:
     return records
 
 
+def check_cloud_move(label: str, record: dict) -> list[str]:
+    """cloudClass matches targetCloud; an in-progress move is coherent with the record."""
+    spec = record.get("spec", {})
+    target_cloud = spec.get("targetCloud")
+    errors: list[str] = []
+
+    cloud_class = spec.get("cloudClass")
+    if cloud_class and target_cloud and (cloud_class == "onprem") != (target_cloud == "onprem"):
+        errors.append(f"{label}: spec.cloudClass '{cloud_class}' does not match targetCloud '{target_cloud}'")
+
+    move = (record.get("status") or {}).get("move")
+    if not isinstance(move, dict):
+        return errors
+    source, target = move.get("source"), move.get("target")
+    if source == target or not {source, target} <= {"aws", "gcp"}:
+        errors.append(f"{label}: status.move source '{source}' and target '{target}' must be two different public clouds")
+    elif target_cloud not in (source, target):
+        errors.append(f"{label}: spec.targetCloud '{target_cloud}' is neither the move source nor its target")
+
+    apps = {app["name"]: app for app in usable_apps(record)}
+    for entry in move.get("restores") or []:
+        name, env = entry.get("app"), entry.get("env")
+        app = apps.get(name)
+        if app is None or app.get("type") != "fullstack":
+            errors.append(f"{label}: status.move restore names '{name}', which is not a fullstack app of the record")
+        elif env not in app_environments(app):
+            errors.append(f"{label}: status.move restore of '{name}' uses environment '{env}' the app does not run")
+    return errors
+
+
 def validate() -> list[str]:
     validator = Draft202012Validator(
         json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
@@ -363,6 +393,7 @@ def validate() -> list[str]:
         errors.extend(check_app_names(str(rel), name, usable_apps(record)))
         errors.extend(check_platform_names(str(rel), name, usable_apps(record)))
         errors.extend(check_environments(str(rel), record))
+        errors.extend(check_cloud_move(str(rel), record))
         errors.extend(check_imported_apps(str(rel), usable_apps(record)))
         errors.extend(check_link_ports(str(rel), name, usable_apps(record)))
 
@@ -813,6 +844,61 @@ def self_test() -> int:
     refused("dependsOn app starting with a digit", schema_errors(imported("api", source=source, dependsOn=[link("9db")])))
     refused("alias starting with a digit", schema_errors(imported("api", source=source, dependsOn=[link("db", 5432, "1db")])))
     refused("port out of range", schema_errors(imported("api", source=source, dependsOn=[link("db", 70000)])))
+
+    def moving(target_cloud: str = "aws", move: dict | None = None, cloud_class: str | None = "public", **spec) -> dict:
+        move = move if move is not None else {
+            "id": 12,
+            "source": "aws",
+            "target": "gcp",
+            "step": "switch",
+            "restores": [
+                {"app": "shop", "env": "prod", "generation": 1, "sourceServer": "p-shop-backend-db"}
+            ],
+        }
+        spec = {"targetCloud": target_cloud, "apps": [app("shop", "fullstack")], **spec}
+        if cloud_class:
+            spec["cloudClass"] = cloud_class
+        return {
+            "apiVersion": "cnp.3istor.com/v1alpha1",
+            "kind": "ProjectRecord",
+            "metadata": {"name": "foo"},
+            "spec": spec,
+            "status": {"move": move},
+        }
+
+    def move_errors(record: dict) -> list[str]:
+        return [e.message for e in validator.iter_errors(record)] + check_cloud_move("r", record)
+
+    def restore(**fields) -> dict:
+        return {"app": "shop", "env": "prod", "generation": 1, "sourceServer": "db", **fields}
+
+    expect("move accepted with targetCloud = source", move_errors(moving("aws")))
+    expect("move accepted with targetCloud = target", move_errors(moving("gcp")))
+    expect(
+        "cloudClass onprem with targetCloud aws",
+        move_errors(moving("aws", move={"id": 1, "source": "aws", "target": "gcp", "step": "prepare"}, cloud_class="onprem")),
+        "cloudClass",
+    )
+    expect(
+        "move source equals target",
+        move_errors(moving("aws", move={"id": 1, "source": "aws", "target": "aws", "step": "prepare"})),
+        "source",
+    )
+    expect("targetCloud outside the move", move_errors(moving("onprem", cloud_class="onprem")), "targetCloud")
+    expect(
+        "restore naming an unknown app",
+        move_errors(moving(move={"id": 1, "source": "aws", "target": "gcp", "step": "switch", "restores": [restore(app="nope")]})),
+        "nope",
+    )
+    expect(
+        "restore in an environment the app lacks",
+        move_errors(moving(move={"id": 1, "source": "aws", "target": "gcp", "step": "switch", "restores": [restore(env="staging")]})),
+        "staging",
+    )
+    refused(
+        "restore generation 0",
+        move_errors(moving(move={"id": 1, "source": "aws", "target": "gcp", "step": "switch", "restores": [restore(generation=0)]})),
+    )
 
     if failures:
         for failure in failures:
