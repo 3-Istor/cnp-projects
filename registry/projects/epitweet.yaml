@@ -138,3 +138,4 @@ spec:
     offhoursGuard: true
     gateway: true
     tunnel: true
+    egressIsolation: true
