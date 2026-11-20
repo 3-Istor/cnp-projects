@@ -269,10 +269,22 @@ def check_link_ports(label: str, project: str, apps: list[dict], values_dir: Pat
 
 
 def check_values_files(label: str, project: str, apps: list[dict]) -> list[str]:
-    """Argo CD renders an imported app from its values file: it must exist (D2)."""
+    """
+    Argo CD renders an imported app from its values file: it must exist (D2),
+    here until the app has a repoURL, then in that repository (CNP-303). A
+    service reads its values from the repository it is built from only.
+    """
     errors: list[str] = []
     for app in apps:
         if app.get("type") not in IMPORTED_TYPES:
+            continue
+        if app.get("repoURL"):
+            source = (app.get("source") or {}).get("repo", "")
+            if app["type"] == "service" and app["repoURL"].lower() != source.lower():
+                errors.append(
+                    f"{label}: app '{app['name']}' reads its values from "
+                    f"{app['repoURL']} but is built from {source}"
+                )
             continue
         values = VALUES_DIR / project / app["name"] / "values.yaml"
         if not values.is_file():
@@ -759,6 +771,25 @@ def self_test() -> int:
         check_values_files("a.yaml", "no-such-project", [imported("api")]),
         "apps/no-such-project/api/values.yaml",
     )
+    shop = {"repo": "https://github.com/acme/shop", "path": "", "sha": "a" * 40}
+    expect(
+        "imported apps switched to their repository need no values file here",
+        check_values_files(
+            "a.yaml",
+            "no-such-project",
+            [
+                imported("api", source=shop, repoURL="https://github.com/acme/shop"),
+                imported("db", "backing", repoURL="https://github.com/acme/shop"),
+            ],
+        ),
+    )
+    expect(
+        "service reading its values from another repository than its own",
+        check_values_files(
+            "a.yaml", "no-such-project", [imported("api", source=shop, repoURL="https://github.com/acme/other")]
+        ),
+        "reads its values from https://github.com/acme/other",
+    )
     expect(
         "template apps need no values file here",
         check_values_files("a.yaml", "no-such-project", [app("web")]),
@@ -798,7 +829,14 @@ def self_test() -> int:
         "schema keeps template apps valid",
         schema_errors(app("web", "fullstack"), app("docs")),
     )
-    refused("service with a repoURL", schema_errors(imported("api", source=source, repoURL="https://github.com/acme/shop")))
+    expect(
+        "schema accepts imported apps switched to their repository",
+        schema_errors(
+            imported("api", source=source, repoURL="https://github.com/acme/shop"),
+            imported("db", "backing", repoURL="https://github.com/acme/shop"),
+        ),
+    )
+    refused("imported app with a repoURL outside GitHub", schema_errors(imported("api", source=source, repoURL="https://evil.example/acme/shop")))
     refused("service without a source", schema_errors(imported("api")))
     refused("source sha that is not a full commit", schema_errors(imported("api", source={**source, "sha": "abc123"})))
     refused("backing app with a source", schema_errors(imported("db", "backing", source=source)))
