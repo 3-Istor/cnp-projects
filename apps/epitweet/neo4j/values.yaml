@@ -67,6 +67,16 @@ workload:
   persistence:
     mountPath: /data
     size: 1Gi
+podLabels:
+  cnp.3istor.com/role: backing
 secrets:
   enabled: true
   vaultPath: project-epitweet/neo4j/imports
+offhours:
+  enabled: true
+  sleepAt: 30 1 * * *
+  wakeAt: 0 7 * * *
+  timezone: Europe/Paris
+network:
+  allowFrom:
+  - social-graph-service
