@@ -1,5 +1,5 @@
 # Release of social-graph-service (CNP-303): the CMP pins the import's image at the switch,
 # then Argo CD Image Updater writes each vX.Y.Z of the app's CI here.
 image:
-  repository: ghcr.io/3-istor/imports/epitweet/social-graph-service
-  tag: imported@sha256:70705583b5ec15869c3d42d0a4dbbde8210a75fd3249820f9dd12061c38c002d
+  repository: ghcr.io/3-istor/imports/epitweet/social-graph-service/ci
+  tag: 0.1.0
