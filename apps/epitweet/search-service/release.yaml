@@ -1,5 +1,5 @@
 # Release of search-service (CNP-303): the CMP pins the import's image at the switch,
 # then Argo CD Image Updater writes each vX.Y.Z of the app's CI here.
 image:
-  repository: ghcr.io/3-istor/imports/epitweet/search-service
-  tag: imported@sha256:eec82152e6715f824e73d15ced676bb78d3ddfb1e181923e0d2c2cf7405a3a68
+  repository: ghcr.io/3-istor/imports/epitweet/search-service/ci
+  tag: 0.1.0
