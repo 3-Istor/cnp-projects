@@ -87,9 +87,15 @@ Elasticsearch). Both render one `app` component, like `static`, but from differe
       type: backing
 ```
 
-- **No `repoURL`.** The values live here, in `apps/<project>/<app>/values.yaml`, written by
-  the CMP with the image digest (D1). The validator refuses a live record whose imported
-  app has no values file: the CMP writes the file and the record entry in one commit (D2).
+- **No `repoURL` at first.** The values live here, in `apps/<project>/<app>/values.yaml`,
+  written by the CMP with the image digest (D1). The validator refuses a live record whose
+  imported app has no values file: the CMP writes the file and the record entry in one
+  commit (D2).
+- **`repoURL` once the standard pull request is merged (CNP-303).** The CMP opens a pull
+  request adding `deploy/values-<app>.yaml` and the template CI to the imported repository.
+  When it is merged, the CMP sets `repoURL` on the import's apps and deletes their values
+  here in the same commit: Argo CD then reads `deploy/values-<app>.yaml` of that repository,
+  like a template app. A service's `repoURL` must be its `source.repo`.
 - **`dependsOn` stays in the project.** Each link becomes an ExternalName Service named
   `alias` in the app's namespace, pointing at the target's Service. The target must be a
   `service` or `backing` app of the same record; the alias cannot be the app's own name,
