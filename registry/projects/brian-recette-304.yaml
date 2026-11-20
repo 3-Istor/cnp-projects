@@ -9,7 +9,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: recette
+    type: static
+    repoURL: https://github.com/3-Istor/recette
+    hostnames:
+      prod: recette-brian-recette-304.3istor.com
   features:
     gatus: true
     offhoursGuard: true
