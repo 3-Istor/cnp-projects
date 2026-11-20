@@ -12,12 +12,16 @@ spec:
   apps:
   - name: mongodb
     type: backing
+    repoURL: https://github.com/3-Istor/epitweet
   - name: redis
     type: backing
+    repoURL: https://github.com/3-Istor/epitweet
   - name: neo4j
     type: backing
+    repoURL: https://github.com/3-Istor/epitweet
   - name: elasticsearch
     type: backing
+    repoURL: https://github.com/3-Istor/epitweet
   - name: user-service
     type: service
     public: false
@@ -30,6 +34,7 @@ spec:
       port: 27017
     - app: redis
       port: 6379
+    repoURL: https://github.com/3-Istor/epitweet
   - name: post-service
     type: service
     public: false
@@ -44,6 +49,7 @@ spec:
       port: 6379
     - app: social-graph-service
       port: 8084
+    repoURL: https://github.com/3-Istor/epitweet
   - name: like-service
     type: service
     public: false
@@ -58,6 +64,7 @@ spec:
       port: 6379
     - app: social-graph-service
       port: 8084
+    repoURL: https://github.com/3-Istor/epitweet
   - name: social-graph-service
     type: service
     public: false
@@ -72,6 +79,7 @@ spec:
       port: 7687
     - app: redis
       port: 6379
+    repoURL: https://github.com/3-Istor/epitweet
   - name: timeline-service
     type: service
     public: false
@@ -88,6 +96,7 @@ spec:
       port: 8084
     - app: user-service
       port: 8081
+    repoURL: https://github.com/3-Istor/epitweet
   - name: frontend
     type: service
     public: true
@@ -110,6 +119,7 @@ spec:
       port: 8085
     - app: user-service
       port: 8081
+    repoURL: https://github.com/3-Istor/epitweet
   - name: search-service
     type: service
     public: false
@@ -122,6 +132,7 @@ spec:
       port: 9200
     - app: redis
       port: 6379
+    repoURL: https://github.com/3-Istor/epitweet
   features:
     gatus: true
     offhoursGuard: true
