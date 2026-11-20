@@ -1,0 +1,5 @@
+# Release of like-service (CNP-303): the CMP pins the import's image at the switch,
+# then Argo CD Image Updater writes each vX.Y.Z of the app's CI here.
+image:
+  repository: ghcr.io/3-istor/imports/epitweet/like-service
+  tag: imported@sha256:37d472c82ee5bfbbb0accad326717a9670e8548345ab56c39be3e2171864c987

@@ -1,0 +1,5 @@
+# Release of user-service (CNP-303): the CMP pins the import's image at the switch,
+# then Argo CD Image Updater writes each vX.Y.Z of the app's CI here.
+image:
+  repository: ghcr.io/3-istor/imports/epitweet/user-service
+  tag: imported@sha256:113c7650ffecef5098d28d1ca8ea1dc99b13b73f5dc3a610ba3e0ed5f5d1f1d4
