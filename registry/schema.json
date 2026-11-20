@@ -112,11 +112,11 @@
                 "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
               },
               "type": {
-                "description": "fullstack renders frontend + backend components; static renders a single app component. service (imported from the user's repository and built by the platform) and backing (a database of the platform catalogue) render one app component whose values live in apps/<project>/<app>/values.yaml of this repository.",
+                "description": "fullstack renders frontend + backend components; static renders a single app component. service (imported from the user's repository and built by the platform) and backing (a database of the platform catalogue) render one app component whose values live in apps/<project>/<app>/values.yaml of this repository, or in deploy/values-<app>.yaml of their repoURL once it is set.",
                 "enum": ["fullstack", "static", "service", "backing"]
               },
               "repoURL": {
-                "description": "The developer's GitHub repository, created by the app-provision module. Never set on service and backing apps: Argo CD does not read their source.",
+                "description": "The developer's GitHub repository, created by the app-provision module. On service and backing apps, set by the CMP once the import's standard pull request is merged (CNP-303): their values are then deploy/values-<app>.yaml of that repository, no longer apps/<project>/<app>/values.yaml here.",
                 "type": "string",
                 "format": "uri"
               },
@@ -198,8 +198,8 @@
               {
                 "if": { "properties": { "type": { "enum": ["service", "backing"] } } },
                 "then": {
-                  "not": { "required": ["repoURL"] },
                   "properties": {
+                    "repoURL": { "pattern": "^https://github\\.com/[A-Za-z0-9-]+/[A-Za-z0-9_.-]+$" },
                     "name": { "maxLength": 40, "pattern": "^[a-z]([-a-z0-9]*[a-z0-9])?$" },
                     "environments": { "maxItems": 1 }
                   }
