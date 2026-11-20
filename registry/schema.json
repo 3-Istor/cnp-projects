@@ -244,6 +244,11 @@
               "description": "Per-project Keycloak IAMaaS (D-04). False keeps the project on the central Keycloak tenant realm, which does not survive an on-prem outage.",
               "type": "boolean",
               "default": false
+            },
+            "egressIsolation": {
+              "description": "Filter the egress of the project's app pods to DNS, the project, the OTLP collector and the Internet (CNP-296).",
+              "type": "boolean",
+              "default": false
             }
           }
         }
