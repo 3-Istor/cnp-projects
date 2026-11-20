@@ -2,7 +2,7 @@
 # Change it from the CMP: the next build rewrites this file.
 image:
   repository: ghcr.io/3-istor/imports/epitweet/social-graph-service
-  digest: sha256:622fc4659dcab7a5a5530aa4cbbfc3d7c36966b623db98c9e94c817fba65debd
+  digest: sha256:70705583b5ec15869c3d42d0a4dbbde8210a75fd3249820f9dd12061c38c002d
 service:
   ports:
   - name: http
@@ -56,3 +56,14 @@ workload:
       - ALL
   tmpDirs:
   - /tmp
+offhours:
+  enabled: true
+  sleepAt: 25 1 * * *
+  wakeAt: 5 7 * * *
+  timezone: Europe/Paris
+network:
+  allowFrom:
+  - frontend
+  - like-service
+  - post-service
+  - timeline-service

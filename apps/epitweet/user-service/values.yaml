@@ -2,7 +2,7 @@
 # Change it from the CMP: the next build rewrites this file.
 image:
   repository: ghcr.io/3-istor/imports/epitweet/user-service
-  digest: sha256:f0a850d87765a05802ea83ae32400d64235352779e0db954550025bcfc0817ba
+  digest: sha256:113c7650ffecef5098d28d1ca8ea1dc99b13b73f5dc3a610ba3e0ed5f5d1f1d4
 service:
   ports:
   - name: http
@@ -54,3 +54,12 @@ workload:
       - ALL
   tmpDirs:
   - /tmp
+offhours:
+  enabled: true
+  sleepAt: 25 1 * * *
+  wakeAt: 5 7 * * *
+  timezone: Europe/Paris
+network:
+  allowFrom:
+  - frontend
+  - timeline-service
