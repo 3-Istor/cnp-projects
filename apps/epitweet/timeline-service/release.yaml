@@ -1,5 +1,5 @@
 # Release of timeline-service (CNP-303): the CMP pins the import's image at the switch,
 # then Argo CD Image Updater writes each vX.Y.Z of the app's CI here.
 image:
-  repository: ghcr.io/3-istor/imports/epitweet/timeline-service
-  tag: imported@sha256:fd52ac4793c46d54baeb46a58950ede0b8eedbbb3552cab362213f8cdfafd2c2
+  repository: ghcr.io/3-istor/imports/epitweet/timeline-service/ci
+  tag: 0.1.0
