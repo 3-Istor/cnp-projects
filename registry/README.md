@@ -95,7 +95,9 @@ Elasticsearch). Both render one `app` component, like `static`, but from differe
   request adding `deploy/values-<app>.yaml` and the template CI to the imported repository.
   When it is merged, the CMP sets `repoURL` on the import's apps and deletes their values
   here in the same commit: Argo CD then reads `deploy/values-<app>.yaml` of that repository,
-  like a template app. A service's `repoURL` must be its `source.repo`.
+  like a template app, and the image of each release from `deploy/env/prod/<app>.yaml` on
+  its `cnp/deploy` branch (written by Argo CD Image Updater on `vX.Y.Z` tags, never on the
+  developer's main). A service's `repoURL` must be its `source.repo`.
 - **`dependsOn` stays in the project.** Each link becomes an ExternalName Service named
   `alias` in the app's namespace, pointing at the target's Service. The target must be a
   `service` or `backing` app of the same record; the alias cannot be the app's own name,
