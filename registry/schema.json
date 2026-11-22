@@ -7,6 +7,40 @@
   "required": ["apiVersion", "kind", "metadata", "spec"],
   "additionalProperties": false,
   "properties": {
+    "status": {
+      "description": "Observed state written by the CMP. Distinct from spec.status.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "move": {
+          "description": "A whole-project move between two public clouds, present only while it runs. targetCloud stays the source until the switch commit, then becomes the target.",
+          "type": "object",
+          "required": ["id", "source", "target", "step"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "description": "project_moves.id in the CMP database.", "type": "integer" },
+            "source": { "enum": ["aws", "gcp"] },
+            "target": { "enum": ["aws", "gcp"] },
+            "step": { "enum": ["prepare", "switch"] },
+            "restores": {
+              "description": "Databases to restore on the target. Set from the switch commit on.",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["app", "env", "generation", "sourceServer"],
+                "additionalProperties": false,
+                "properties": {
+                  "app": { "type": "string" },
+                  "env": { "enum": ["prod", "staging"] },
+                  "generation": { "type": "integer", "minimum": 1 },
+                  "sourceServer": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "apiVersion": {
       "const": "cnp.3istor.com/v1alpha1"
     },
@@ -40,8 +74,12 @@
       "required": ["targetCloud"],
       "additionalProperties": false,
       "properties": {
+        "cloudClass": {
+          "description": "onprem or public (aws or gcp). Must agree with targetCloud.",
+          "enum": ["onprem", "public"]
+        },
         "targetCloud": {
-          "description": "The cloud this project runs on. Immutable after creation (D-01): changing it is a re-create. Must match the name of a registered Argo CD cluster secret.",
+          "description": "The cloud this project runs on. Changes only through a project move, which rewrites it at the switch commit. Must match the name of a registered Argo CD cluster secret.",
           "enum": ["onprem", "aws", "gcp"]
         },
         "logRetention": {

@@ -111,9 +111,10 @@ Elasticsearch). Both render one `app` component, like `static`, but from differe
 
 - **The filename must match `metadata.name`.** The ApplicationSet and `cnp-clean` both
   key off the path.
-- **`targetCloud` is immutable in v1.** Changing it in place does not move a project —
-  it orphans everything already provisioned on the old cloud. The API rejects the update;
-  editing the file by hand bypasses that check, so don't. Re-create and migrate the data.
+- **`targetCloud` changes only through a move.** The CMP rewrites it at the switch commit
+  of an `aws`↔`gcp` move (`status.move`, present only while it runs). Editing it by hand
+  orphans what is provisioned on the old cloud. `spec.cloudClass` (`onprem`|`public`) must
+  agree with it.
 - **`targetCloud` must name a registered Argo CD cluster.** The cluster secrets are named
   `onprem`, `aws` and `gcp` (D-03).
 - **Every existing project reads back as `onprem`**, with a single `prod` environment.
