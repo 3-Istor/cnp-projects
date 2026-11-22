@@ -1,0 +1,4 @@
+# Release of epitweet-mcp: Argo CD Image Updater writes each vX.Y.Z of the app's CI here.
+image:
+  repository: ghcr.io/3-istor/imports/epitweet/epitweet-mcp/ci
+  tag: 1.1.0
