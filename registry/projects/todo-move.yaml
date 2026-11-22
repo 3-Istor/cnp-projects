@@ -21,3 +21,4 @@ spec:
     offhoursGuard: true
     gateway: true
     tunnel: true
+  customerAccess: companies
