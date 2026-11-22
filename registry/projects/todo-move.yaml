@@ -5,7 +5,7 @@ metadata:
   owner: hugo.guillet
   createdAt: '2026-11-22T13:33:46.065155+00:00'
 spec:
-  targetCloud: aws
+  targetCloud: onprem
   cloudClass: public
   status: active
   environments:
@@ -27,4 +27,9 @@ status:
     id: 6
     source: aws
     target: onprem
-    step: prepare
+    step: switch
+    restores:
+    - app: todo
+      env: prod
+      generation: 5
+      sourceServer: todo-move-todo-backend-db-r4
