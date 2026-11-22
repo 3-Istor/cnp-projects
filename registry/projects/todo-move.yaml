@@ -22,14 +22,3 @@ spec:
     gateway: true
     tunnel: true
   customerAccess: open
-status:
-  move:
-    id: 2
-    source: aws
-    target: gcp
-    step: switch
-    restores:
-    - app: todo
-      env: prod
-      generation: 1
-      sourceServer: todo-move-todo-backend-db
