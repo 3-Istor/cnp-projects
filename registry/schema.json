@@ -5,6 +5,9 @@
   "description": "One record per project. The source of truth for where a project runs. Consumed by the Argo CD ApplicationSet, the blackbox probe target list and the cnp-clean job.",
   "type": "object",
   "required": ["apiVersion", "kind", "metadata", "spec"],
+  "$defs": {
+    "aiModel": { "enum": ["claude-haiku-5-5", "claude-sonnet-5-5"] }
+  },
   "additionalProperties": false,
   "properties": {
     "status": {
@@ -150,8 +153,8 @@
                 "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
               },
               "type": {
-                "description": "fullstack renders frontend + backend components; static renders a single app component. service (imported from the user's repository and built by the platform) and backing (a database of the platform catalogue) render one app component whose values live in apps/<project>/<app>/values.yaml of this repository, or in deploy/values-<app>.yaml of their repoURL once it is set.",
-                "enum": ["fullstack", "static", "service", "backing"]
+                "description": "fullstack renders frontend + backend components; static renders a single app component. service (imported from the user's repository and built by the platform), backing (a database of the platform catalogue), agent (a kagent agent whose rights are in spec.ai.agents) and mcp (an MCP server run by kmcp) render one app component whose values live in apps/<project>/<app>/values.yaml of this repository, or in deploy/values-<app>.yaml of their repoURL once it is set.",
+                "enum": ["fullstack", "static", "service", "backing", "agent", "mcp"]
               },
               "repoURL": {
                 "description": "The developer's GitHub repository, created by the app-provision module. On service and backing apps, set by the CMP once the import's standard pull request is merged (CNP-303): their values are then deploy/values-<app>.yaml of that repository, no longer apps/<project>/<app>/values.yaml here.",
@@ -234,7 +237,7 @@
                 }
               },
               {
-                "if": { "properties": { "type": { "enum": ["service", "backing"] } } },
+                "if": { "properties": { "type": { "enum": ["service", "backing", "agent", "mcp"] } } },
                 "then": {
                   "properties": {
                     "repoURL": { "pattern": "^https://github\\.com/[A-Za-z0-9-]+/[A-Za-z0-9_.-]+$" },
@@ -248,6 +251,30 @@
                 "then": { "required": ["source"] }
               },
               {
+                "if": { "properties": { "type": { "const": "agent" } } },
+                "then": {
+                  "not": {
+                    "anyOf": [
+                      { "required": ["source"] },
+                      { "required": ["public"] },
+                      { "required": ["dependsOn"] },
+                      { "required": ["hostnames"] }
+                    ]
+                  }
+                }
+              },
+              {
+                "if": { "properties": { "type": { "const": "mcp" } } },
+                "then": {
+                  "not": {
+                    "anyOf": [
+                      { "required": ["public"] },
+                      { "required": ["hostnames"] }
+                    ]
+                  }
+                }
+              },
+              {
                 "if": { "properties": { "type": { "const": "backing" } } },
                 "then": {
                   "not": {
@@ -259,6 +286,115 @@
                 }
               }
             ]
+          }
+        },
+        "stake": {
+          "description": "What is at stake in the project, mirrored from the CMP's stake level. A critical project cannot enable AI.",
+          "enum": ["sandbox", "demo", "standard", "critical"]
+        },
+        "ai": {
+          "description": "AI rights of the project, written by the CMP. The AI gateway policy is generated from this block only: an agent's or an app's values can never exceed it.",
+          "type": "object",
+          "required": ["enabled"],
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "models": {
+              "description": "Models the project may use. Agents pick theirs from this list.",
+              "type": "array",
+              "uniqueItems": true,
+              "default": ["claude-haiku-5-5"],
+              "items": { "$ref": "#/$defs/aiModel" }
+            },
+            "webSearch": {
+              "description": "Allows the web_search tool, which sends queries to the Internet and reads untrusted content.",
+              "type": "boolean",
+              "default": false
+            },
+            "dailyTokenBudget": {
+              "description": "Project-wide daily tokens. Alert only: the hard caps are per agent and per app.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "apps": {
+              "description": "Apps of the project with model access (values ai.enabled), each with its own gateway client.",
+              "type": "array",
+              "default": [],
+              "items": {
+                "type": "object",
+                "required": ["name"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string", "pattern": "^[a-z]([-a-z0-9]*[a-z0-9])?$" },
+                  "enabled": { "type": "boolean", "default": true },
+                  "dailyTokenBudget": {
+                    "description": "Hard daily tokens for this app's client at the gateway; 0 means no model access (an MCP-only app).",
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            },
+            "agents": {
+              "description": "Rights of each agent, an app of type agent of this record.",
+              "type": "array",
+              "default": [],
+              "items": {
+                "type": "object",
+                "required": ["name", "owner", "models", "dailyTokenBudget"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string", "maxLength": 40, "pattern": "^[a-z]([-a-z0-9]*[a-z0-9])?$" },
+                  "owner": {
+                    "description": "Keycloak username answerable for the agent.",
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "models": {
+                    "type": "array",
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "items": { "$ref": "#/$defs/aiModel" }
+                  },
+                  "dailyTokenBudget": {
+                    "description": "Hard daily tokens for the agent's client (azp), enforced at the gateway.",
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "tools": {
+                    "description": "Tools the agent may call: <server>__<tool> for an MCP server of the project, or a platform tool (run_python, web_search).",
+                    "type": "array",
+                    "default": [],
+                    "uniqueItems": true,
+                    "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*(__[A-Za-z0-9_-]+)?$" }
+                  },
+                  "isolation": {
+                    "description": "Minimum runtime of the agent's pods.",
+                    "enum": ["runc", "gvisor", "kata"],
+                    "default": "gvisor"
+                  },
+                  "callers": {
+                    "description": "Who may start the agent through the gateway's A2A route.",
+                    "type": "array",
+                    "default": [],
+                    "uniqueItems": true,
+                    "items": { "type": "string", "pattern": "^(app|agent):[a-z]([-a-z0-9]*[a-z0-9])?$|^user:(members|admins)$" }
+                  },
+                  "calls": {
+                    "description": "Other agents of the project this agent may call (A2A).",
+                    "type": "array",
+                    "default": [],
+                    "uniqueItems": true,
+                    "items": { "type": "string", "pattern": "^[a-z]([-a-z0-9]*[a-z0-9])?$" }
+                  },
+                  "status": {
+                    "description": "suspended is the kill switch: the gateway refuses every call of the agent.",
+                    "enum": ["active", "suspended"],
+                    "default": "active"
+                  }
+                }
+              }
+            }
           }
         },
         "features": {
