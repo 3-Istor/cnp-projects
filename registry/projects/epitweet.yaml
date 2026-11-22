@@ -116,8 +116,6 @@ spec:
       path: tinyx/search-service
       sha: d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2
     dependsOn:
-    - app: elasticsearch
-      port: 9200
     - app: redis
       port: 6379
     repoURL: https://github.com/3-Istor/epitweet
