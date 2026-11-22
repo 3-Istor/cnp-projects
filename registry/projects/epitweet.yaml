@@ -78,8 +78,6 @@ spec:
       path: tinyx/timeline-service
       sha: d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2
     dependsOn:
-    - app: mongodb
-      port: 27017
     - app: redis
       port: 6379
     - app: social-graph-service
