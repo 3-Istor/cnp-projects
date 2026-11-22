@@ -10,7 +10,12 @@ spec:
   status: active
   environments:
   - name: prod
-  apps: []
+  apps:
+  - name: todo
+    type: fullstack
+    repoURL: https://github.com/3-Istor/todo
+    hostnames:
+      prod: todo-todo-move.3istor.com
   features:
     gatus: true
     offhoursGuard: true
