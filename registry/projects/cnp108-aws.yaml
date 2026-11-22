@@ -5,7 +5,7 @@ metadata:
   owner: hugo.guillet
   createdAt: '2026-11-15T13:21:45.549388+00:00'
 spec:
-  targetCloud: aws
+  targetCloud: gcp
   status: active
   environments:
   - name: prod
@@ -25,9 +25,11 @@ spec:
     offhoursGuard: true
     gateway: true
     tunnel: true
+  cloudClass: public
 status:
   move:
     id: 1
     source: aws
     target: gcp
-    step: prepare
+    step: switch
+    restores: []
