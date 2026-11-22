@@ -30,3 +30,4 @@ spec:
     gateway: true
     tunnel: true
   customerAccess: companies
+  deletionProtection: true
