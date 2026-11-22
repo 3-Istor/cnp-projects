@@ -10,12 +10,7 @@ spec:
   status: active
   environments:
   - name: prod
-  apps:
-  - name: bkp
-    type: fullstack
-    repoURL: https://github.com/3-Istor/bkp
-    hostnames:
-      prod: bkp-cnp291-rehearsal.3istor.com
+  apps: []
   features:
     gatus: true
     offhoursGuard: true
