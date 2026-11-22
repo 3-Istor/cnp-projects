@@ -133,7 +133,7 @@ spec:
     source:
       repo: https://github.com/3-Istor/epitweet
       path: tinyx/epitweet-mcp
-      sha: 09a261882ae82be5ca14267ea8146e0fd753f0c3
+      sha: 6437c0d7929f9f376323abcca80a9836d0e19854
     dependsOn:
     - app: redis
       port: 6379
@@ -150,18 +150,12 @@ spec:
     source:
       repo: https://github.com/3-Istor/epitweet
       path: tinyx/grok-bridge
-      sha: 09a261882ae82be5ca14267ea8146e0fd753f0c3
+      sha: 6437c0d7929f9f376323abcca80a9836d0e19854
     dependsOn:
     - app: redis
       port: 6379
     - app: user-service
       port: 8081
-    repoURL: https://github.com/3-Istor/epitweet
-  - name: grok-reader
-    type: agent
-    repoURL: https://github.com/3-Istor/epitweet
-  - name: grok-actor
-    type: agent
     repoURL: https://github.com/3-Istor/epitweet
   features:
     gatus: true
@@ -177,23 +171,3 @@ spec:
     apps:
     - {name: epitweet-mcp, enabled: true, dailyTokenBudget: 0}
     - {name: grok-bridge, enabled: true, dailyTokenBudget: 0}
-    agents:
-    - name: grok-reader
-      owner: brian.perret
-      models: [claude-haiku-5-5]
-      dailyTokenBudget: 300000
-      tools: [epitweet-mcp__get_thread, epitweet-mcp__search_posts, epitweet-mcp__get_profile, epitweet-mcp__get_stats,
-        epitweet-mcp__get_trending, run_python, web_search]
-      isolation: gvisor
-      callers: [app:grok-bridge, user:members]
-      calls: [grok-actor]
-      status: active
-    - name: grok-actor
-      owner: brian.perret
-      models: [claude-haiku-5-5]
-      dailyTokenBudget: 50000
-      tools: [epitweet-mcp__reply_as_grok]
-      isolation: gvisor
-      callers: [agent:grok-reader]
-      calls: []
-      status: active
