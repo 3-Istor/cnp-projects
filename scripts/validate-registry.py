@@ -13,6 +13,11 @@ links stay inside the project and cannot shadow a platform name, and a live
 record's imported app has its values file, apps/<project>/<app>/values.yaml,
 which is what Argo CD renders it from.
 
+AI (``spec.ai``) is checked against its agents: a critical or off-prem project
+cannot enable it, every agent's rights name an app of type agent and the other
+way round, and no agent holds a model, web search or a callee its project
+does not grant.
+
 ``--self-test`` runs the collision and link checks against in-memory fixtures.
 
 Exits non-zero on the first failure so CI fails loudly.
@@ -43,7 +48,14 @@ FULLSTACK_COMPONENTS = ("frontend", "backend")
 # Prod keeps the names every existing app already has; staging objects carry a
 # suffix. Must match the ApplicationSets and cnp-project-base.
 ENVIRONMENT_SUFFIX = {"prod": "", "staging": "-stg"}
-IMPORTED_TYPES = ("service", "backing")
+# Types with their own values file (apps/<project>/<app>/values.yaml, then
+# deploy/values-<app>.yaml of their repoURL), rendered as one app component.
+IMPORTED_TYPES = ("service", "backing", "agent", "mcp")
+# dependsOn links become ExternalName Services to these only: agents and MCP
+# servers are reached through the AI gateway, never directly.
+LINK_TARGET_TYPES = ("service", "backing")
+# Platform tools every AI project may grant; any other tool is <server>__<tool>.
+PLATFORM_AI_TOOLS = frozenset({"run_python", "web_search"})
 # An alias is a Service name in the caller's namespace: these would shadow the
 # names an app uses to reach the platform (D18). Dots never pass the schema, so
 # no alias can spell a FQDN such as vault.vault.svc.cluster.local.
@@ -60,10 +72,11 @@ OWN_SERVICE_SUFFIXES = ("", "-stable", "-canary")
 # these. Mirrors PLATFORM_NAMESPACES in CMP backend/app/services/registry_names.py.
 PLATFORM_NAMESPACES = frozenset(
     {
-        "3istor-sessions", "argo-rollouts", "argocd", "arcl-cmp", "cert-manager",
+        "3istor-sessions", "ai-gateway", "ai-sandbox", "ai-tools", "argo-rollouts",
+        "argocd", "arcl-cmp", "cert-manager",
         "cilium-secrets", "cloudflared", "cnp-projects-db", "cnp-vpn", "cnpg-system",
         "compliance", "default", "demo-app", "dev-sandbox", "envoy-gateway-system",
-        "finops", "garage", "garage-s3", "gateway-infra", "keycloak", "kolla",
+        "finops", "garage", "garage-s3", "gateway-infra", "kagent", "keycloak", "kolla",
         "kube-node-lease", "kube-public", "kube-system", "kyverno", "linmap-bot",
         "local-path-storage", "mepa-app", "n8n", "observability", "offhours-guard",
         "opencost", "qcm", "release-lab", "roadmap", "rook-ceph", "status",
@@ -221,7 +234,7 @@ def check_imported_apps(label: str, apps: list[dict]) -> list[str]:
                     f"{label}: app '{app_name}' depends on '{target}', which is not an "
                     f"app of this project"
                 )
-            elif types[target] not in IMPORTED_TYPES:
+            elif types[target] not in LINK_TARGET_TYPES:
                 errors.append(
                     f"{label}: app '{app_name}' depends on '{target}' of type "
                     f"{types[target]}: links target service or backing apps only"
@@ -280,7 +293,7 @@ def check_values_files(label: str, project: str, apps: list[dict]) -> list[str]:
             continue
         if app.get("repoURL"):
             source = (app.get("source") or {}).get("repo", "")
-            if app["type"] == "service" and app["repoURL"].lower() != source.lower():
+            if (app["type"] == "service" or source) and app["repoURL"].lower() != source.lower():
                 errors.append(
                     f"{label}: app '{app['name']}' reads its values from "
                     f"{app['repoURL']} but is built from {source}"
@@ -315,6 +328,94 @@ def check_environments(label: str, record: dict) -> list[str]:
             f"allows {max_apps} (spec.environments[staging].maxApps)"
         ]
     return []
+
+
+def check_ai(label: str, record: dict) -> list[str]:
+    """
+    spec.ai holds the rights the AI gateway enforces; an app of type agent is
+    the agent those rights belong to. The two must name each other, and no
+    agent may hold more than its project (models, web search).
+    """
+    spec = record.get("spec") or {}
+    ai = spec.get("ai")
+    apps = {app["name"]: app.get("type") for app in usable_apps(record)}
+    agent_apps = {name for name, type_ in apps.items() if type_ == "agent"}
+    if not isinstance(ai, dict):
+        return [
+            f"{label}: app '{name}' is an agent but spec.ai does not enable AI"
+            for name in sorted(agent_apps)
+        ]
+
+    errors: list[str] = []
+    enabled = ai.get("enabled") is True
+    if enabled and spec.get("stake") == "critical":
+        errors.append(f"{label}: a critical project cannot enable AI (spec.stake critical, spec.ai.enabled true)")
+    # The AI gateway, kagent and the sandboxes run on the on-prem cluster only.
+    if enabled and spec.get("targetCloud") != "onprem":
+        errors.append(f"{label}: AI runs on-prem only, spec.targetCloud is '{spec.get('targetCloud')}'")
+    if not enabled:
+        errors.extend(
+            f"{label}: app '{name}' is an agent but spec.ai.enabled is false"
+            for name in sorted(agent_apps)
+        )
+
+    # The schema keeps every model to the allowed list; this keeps agents to the project's.
+    project_models = ai.get("models") or ["claude-haiku-5-5"]
+
+    seen_apps: set[str] = set()
+    for entry in ai.get("apps") or []:
+        name = entry.get("name") if isinstance(entry, dict) else None
+        if not isinstance(name, str):
+            continue
+        if name in seen_apps:
+            errors.append(f"{label}: spec.ai.apps lists '{name}' twice")
+        seen_apps.add(name)
+        if name not in apps:
+            errors.append(f"{label}: spec.ai.apps names '{name}', which is not an app of this project")
+        elif apps[name] == "agent":
+            errors.append(f"{label}: spec.ai.apps names '{name}', an agent: its rights go in spec.ai.agents")
+
+    agents = [a for a in ai.get("agents") or [] if isinstance(a, dict) and isinstance(a.get("name"), str)]
+    agent_names = {agent["name"] for agent in agents}
+    seen_agents: set[str] = set()
+    for agent in agents:
+        name = agent["name"]
+        where = f"{label}: spec.ai.agents '{name}'"
+        if name in seen_agents:
+            errors.append(f"{where} is declared twice")
+        seen_agents.add(name)
+        if apps.get(name) != "agent":
+            errors.append(f"{where} has no app of type agent with that name in spec.apps")
+        for model in agent.get("models") or []:
+            if model not in project_models:
+                errors.append(f"{where} uses model '{model}', which spec.ai.models does not allow")
+        tools = agent.get("tools") or []
+        if "web_search" in tools and ai.get("webSearch") is not True:
+            errors.append(f"{where} has tool web_search but spec.ai.webSearch is not true")
+        for tool in tools:
+            if isinstance(tool, str) and "__" not in tool and tool not in PLATFORM_AI_TOOLS:
+                errors.append(
+                    f"{where} has tool '{tool}': use <server>__<tool> or a platform tool "
+                    f"({', '.join(sorted(PLATFORM_AI_TOOLS))})"
+                )
+        for callee in agent.get("calls") or []:
+            if callee == name:
+                errors.append(f"{where} calls itself")
+            elif callee not in agent_names:
+                errors.append(f"{where} calls '{callee}', which is not an agent of spec.ai.agents")
+        for caller in agent.get("callers") or []:
+            kind, _, target = str(caller).partition(":")
+            if kind == "app" and (target not in apps or apps[target] == "agent"):
+                errors.append(f"{where} has caller '{caller}', which is not a non-agent app of this project")
+            elif kind == "agent" and target not in agent_names - {name}:
+                errors.append(f"{where} has caller '{caller}', which is not another agent of spec.ai.agents")
+
+    if enabled:
+        errors.extend(
+            f"{label}: app '{name}' is an agent without rights: add it to spec.ai.agents"
+            for name in sorted(agent_apps - agent_names)
+        )
+    return errors
 
 
 def check_collisions(records: list[tuple[str, dict]]) -> list[str]:
@@ -407,6 +508,7 @@ def validate() -> list[str]:
         errors.extend(check_environments(str(rel), record))
         errors.extend(check_cloud_move(str(rel), record))
         errors.extend(check_imported_apps(str(rel), usable_apps(record)))
+        errors.extend(check_ai(str(rel), record))
         errors.extend(check_link_ports(str(rel), name, usable_apps(record)))
 
         if path.parent.name == "projects":
@@ -936,6 +1038,137 @@ def self_test() -> int:
     refused(
         "restore generation 0",
         move_errors(moving(move={"id": 1, "source": "aws", "target": "gcp", "step": "switch", "restores": [restore(generation=0)]})),
+    )
+
+    def ai_record(ai: dict | None, *apps: dict, stake: str | None = None) -> dict:
+        spec: dict = {"targetCloud": "onprem", "apps": list(apps)}
+        if ai is not None:
+            spec["ai"] = ai
+        if stake:
+            spec["stake"] = stake
+        return {
+            "apiVersion": "cnp.3istor.com/v1alpha1",
+            "kind": "ProjectRecord",
+            "metadata": {"name": "foo"},
+            "spec": spec,
+        }
+
+    def rights(name: str, **fields) -> dict:
+        return {"name": name, "owner": "brian.perret", "models": ["claude-haiku-5-5"], "dailyTokenBudget": 300000, **fields}
+
+    def ai_errors(record: dict) -> list[str]:
+        return [error.message for error in validator.iter_errors(record)] + check_ai("a.yaml", record)
+
+    reader, actor = imported("reader", "agent"), imported("actor", "agent")
+    bridge, tools_app = imported("bridge", source=source), imported("tools", "mcp")
+    grok = {
+        "enabled": True,
+        "models": ["claude-haiku-5-5", "claude-sonnet-5-5"],
+        "webSearch": True,
+        "dailyTokenBudget": 2000000,
+        "apps": [{"name": "tools", "enabled": True, "dailyTokenBudget": 0}],
+        "agents": [
+            rights(
+                "reader",
+                tools=["tools__get_thread", "run_python", "web_search"],
+                isolation="gvisor",
+                callers=["app:bridge", "user:members"],
+                calls=["actor"],
+            ),
+            rights("actor", tools=["tools__reply"], callers=["agent:reader"], status="suspended"),
+        ],
+    }
+    expect("reader and actor agents with an MCP app", ai_errors(ai_record(grok, reader, actor, bridge, tools_app)))
+    expect("project without AI and without agents", ai_errors(ai_record(None, bridge)))
+    expect(
+        "critical project cannot enable AI",
+        ai_errors(ai_record(grok, reader, actor, bridge, tools_app, stake="critical")),
+        "a critical project cannot enable AI",
+    )
+    expect(
+        "AI on a public cloud",
+        ai_errors({**ai_record({"enabled": True}), "spec": {"targetCloud": "aws", "ai": {"enabled": True}}}),
+        "AI runs on-prem only",
+    )
+    expect(
+        "critical project may keep AI disabled",
+        ai_errors(ai_record({"enabled": False}, bridge, stake="critical")),
+    )
+    expect(
+        "web_search needs spec.ai.webSearch",
+        ai_errors(ai_record({**grok, "webSearch": False}, reader, actor, bridge, tools_app)),
+        "spec.ai.agents 'reader' has tool web_search but spec.ai.webSearch is not true",
+    )
+    expect(
+        "agent rights must name an app of type agent",
+        ai_errors(ai_record({**grok, "agents": [rights("bridge")]}, bridge)),
+        "spec.ai.agents 'bridge' has no app of type agent",
+    )
+    expect(
+        "agent rights naming no app at all",
+        ai_errors(ai_record({"enabled": True, "agents": [rights("ghost")]})),
+        "spec.ai.agents 'ghost' has no app of type agent",
+    )
+    expect(
+        "agent app needs its rights",
+        ai_errors(ai_record({"enabled": True}, reader)),
+        "app 'reader' is an agent without rights",
+    )
+    expect(
+        "agent app needs AI enabled",
+        ai_errors(ai_record({"enabled": False, "agents": [rights("reader")]}, reader)),
+        "app 'reader' is an agent but spec.ai.enabled is false",
+    )
+    expect(
+        "agent app in a project without spec.ai",
+        ai_errors(ai_record(None, reader)),
+        "app 'reader' is an agent but spec.ai does not enable AI",
+    )
+    expect(
+        "agent model outside the project's models",
+        ai_errors(ai_record({"enabled": True, "agents": [rights("reader", models=["claude-sonnet-5-5"])]}, reader)),
+        "uses model 'claude-sonnet-5-5', which spec.ai.models does not allow",
+    )
+    refused(
+        "model outside the allowed list",
+        ai_errors(ai_record({"enabled": True, "agents": [rights("reader", models=["gpt-5"])]}, reader)),
+    )
+    refused("project model outside the allowed list", ai_errors(ai_record({"enabled": True, "models": ["claude-opus-5-5"]})))
+    expect(
+        "calls an agent that does not exist",
+        ai_errors(ai_record({"enabled": True, "agents": [rights("reader", calls=["actor"])]}, reader)),
+        "calls 'actor', which is not an agent",
+    )
+    expect(
+        "caller app that does not exist",
+        ai_errors(ai_record({"enabled": True, "agents": [rights("reader", callers=["app:nope"])]}, reader)),
+        "has caller 'app:nope'",
+    )
+    expect(
+        "tool that is neither a server tool nor a platform tool",
+        ai_errors(ai_record({"enabled": True, "agents": [rights("reader", tools=["shell"])]}, reader)),
+        "has tool 'shell'",
+    )
+    expect(
+        "ai app that is an agent",
+        ai_errors(ai_record({"enabled": True, "apps": [{"name": "reader"}], "agents": [rights("reader")]}, reader)),
+        "spec.ai.apps names 'reader', an agent",
+    )
+    refused("unknown isolation", ai_errors(ai_record({"enabled": True, "agents": [rights("reader", isolation="vm")]}, reader)))
+    refused("unknown caller kind", ai_errors(ai_record({"enabled": True, "agents": [rights("reader", callers=["group:all"])]}, reader)))
+    refused("agent app with a source", schema_errors(imported("reader", "agent", source=source)))
+    refused("agent app with links", schema_errors(imported("reader", "agent", dependsOn=[link("db")])))
+    refused("public mcp app", schema_errors(imported("tools", "mcp", public=True)))
+    expect("mcp app with a source and links", schema_errors(imported("tools", "mcp", source=source, dependsOn=[link("db")]), imported("db", "backing")))
+    expect(
+        "links never target an agent",
+        check_imported_apps("a.yaml", [imported("api", source=source, dependsOn=[link("reader")]), reader]),
+        "links target service or backing apps only",
+    )
+    expect(
+        "platform AI namespaces are reserved",
+        check_platform_names("a.yaml", "ai", [app("gateway")]),
+        "ai-gateway",
     )
 
     if failures:

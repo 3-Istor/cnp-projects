@@ -1,0 +1,61 @@
+# A project with AI enabled: an MCP server app, an app calling the models, and a
+# reader/actor pair of agents (app-templates agents/app-bot.yaml). Reference only.
+apiVersion: cnp.3istor.com/v1alpha1
+kind: ProjectRecord
+metadata:
+  name: chirp
+  owner: bperret
+spec:
+  targetCloud: onprem
+  stake: standard
+
+  apps:
+    - name: api
+      type: service
+      repoURL: https://github.com/acme/chirp
+      source:
+        repo: https://github.com/acme/chirp
+        sha: 3f6c2a9d8e1b4c7a0f5e2d9c8b7a6f5e4d3c2b1a
+    # Serves MCP on /mcp (values mcp.enabled): tools chirp-mcp__<tool>.
+    - name: chirp-mcp
+      type: service
+      repoURL: https://github.com/acme/chirp
+      source:
+        repo: https://github.com/acme/chirp
+        path: mcp
+        sha: 3f6c2a9d8e1b4c7a0f5e2d9c8b7a6f5e4d3c2b1a
+    # Agents: kagent objects rendered from deploy/values-<agent>.yaml (key agent:).
+    - name: bot-reader
+      type: agent
+      repoURL: https://github.com/acme/chirp
+    - name: bot-actor
+      type: agent
+      repoURL: https://github.com/acme/chirp
+
+  # Written by the CMP. The gateway policy is generated from here only.
+  ai:
+    enabled: true
+    models: [claude-haiku-5-5, claude-sonnet-5-5]
+    webSearch: true
+    dailyTokenBudget: 2000000          # alert only
+    apps:
+      - {name: chirp-mcp, enabled: true, dailyTokenBudget: 0}
+      - {name: api, enabled: true, dailyTokenBudget: 200000}
+    agents:
+      - name: bot-reader
+        owner: bperret
+        models: [claude-haiku-5-5]
+        dailyTokenBudget: 300000       # hard, per client, at the gateway
+        tools: [chirp-mcp__get_thread, chirp-mcp__search_posts, run_python, web_search]
+        isolation: gvisor
+        callers: [app:api, user:members]
+        calls: [bot-actor]
+        status: active
+      - name: bot-actor
+        owner: bperret
+        models: [claude-haiku-5-5]
+        dailyTokenBudget: 100000
+        tools: [chirp-mcp__reply]
+        isolation: gvisor
+        callers: [agent:bot-reader]
+        status: active

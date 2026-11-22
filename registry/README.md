@@ -107,6 +107,31 @@ Elasticsearch). Both render one `app` component, like `static`, but from differe
   `service.ports[].port`.
 - **Prod only** for now, and a backing app is never public and has no `source`.
 
+## AI: agents, MCP servers and rights
+
+`spec.ai` holds what the project may do with AI. The CMP writes it, the AI gateway policy
+is generated from it alone, and nothing in an app repository can exceed it. A full record:
+[`examples/ai-agents.yaml`](examples/ai-agents.yaml).
+
+- **`type: agent`** is a kagent agent. Its settings are the `agent:` block of
+  `deploy/values-<agent>.yaml` (or `apps/<project>/<agent>/values.yaml` here until it has a
+  `repoURL`), rendered by infra-templates. Its rights are the `spec.ai.agents` entry of the
+  same name: models, daily token budget (hard, at the gateway), tools, minimum isolation,
+  callers, callees, and `status: suspended`, the kill switch.
+- **`type: mcp`** is an MCP server run by kmcp. Any other app can serve MCP too, with
+  `mcp: {enabled: true}` in its values. Both are listed in `spec.ai.apps` and reached
+  through the gateway on `/mcp/<project>`, tools prefixed with the app name
+  (`<app>__<tool>`).
+- **`spec.ai.apps`** gives an app model access (`ai: {enabled: true}` in its values) and a
+  hard daily budget; `dailyTokenBudget: 0` is an MCP server with no model access.
+- **`spec.stake`** mirrors the CMP stake level.
+
+The validator refuses: AI on a `critical` project or off-prem; an agent app without its
+`spec.ai.agents` entry, or an entry without its agent app; an agent model the project does
+not allow; `web_search` without `spec.ai.webSearch`; a tool that is neither
+`<server>__<tool>` nor a platform tool (`run_python`, `web_search`); `calls` and `callers`
+naming nothing in the record.
+
 ## Rules
 
 - **The filename must match `metadata.name`.** The ApplicationSet and `cnp-clean` both
@@ -130,5 +155,5 @@ python3 scripts/validate-registry.py
 ```
 
 It checks every record against `schema.json`, that the filename matches `metadata.name`,
-that no two records claim the same name, the `dependsOn` links of imported apps, and that
-each imported app of a live record has its values file. CI runs it on every push and pull request.
+that no two records claim the same name, the `dependsOn` links of imported apps, that
+each imported app of a live record has its values file, and the AI rights above. CI runs it on every push and pull request.
