@@ -1,0 +1,18 @@
+apiVersion: cnp.3istor.com/v1alpha1
+kind: ProjectRecord
+metadata:
+  name: todo-move
+  owner: hugo.guillet
+  createdAt: '2026-11-22T13:33:46.065155+00:00'
+spec:
+  targetCloud: aws
+  cloudClass: public
+  status: active
+  environments:
+  - name: prod
+  apps: []
+  features:
+    gatus: true
+    offhoursGuard: true
+    gateway: true
+    tunnel: true
