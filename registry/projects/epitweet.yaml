@@ -86,6 +86,8 @@ spec:
       port: 8084
     - app: user-service
       port: 8081
+    - app: post-service
+      port: 8082
     repoURL: https://github.com/3-Istor/epitweet
   - name: frontend
     type: service
