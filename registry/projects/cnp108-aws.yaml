@@ -25,3 +25,9 @@ spec:
     offhoursGuard: true
     gateway: true
     tunnel: true
+status:
+  move:
+    id: 1
+    source: aws
+    target: gcp
+    step: prepare
