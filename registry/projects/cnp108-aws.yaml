@@ -26,10 +26,3 @@ spec:
     gateway: true
     tunnel: true
   cloudClass: public
-status:
-  move:
-    id: 1
-    source: aws
-    target: gcp
-    step: switch
-    restores: []
