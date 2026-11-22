@@ -67,8 +67,6 @@ spec:
       path: tinyx/socialgraph-service
       sha: d9b680e85a1ea9952e073bd52dae1d5a9d83a1b2
     dependsOn:
-    - app: mongodb
-      port: 27017
     - app: neo4j
       port: 7687
     - app: redis
