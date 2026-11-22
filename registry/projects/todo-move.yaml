@@ -22,14 +22,3 @@ spec:
     gateway: true
     tunnel: true
   customerAccess: open
-status:
-  move:
-    id: 10
-    source: aws
-    target: onprem
-    step: switch
-    restores:
-    - app: todo
-      env: prod
-      generation: 9
-      sourceServer: todo-move-todo-backend-db-r8
