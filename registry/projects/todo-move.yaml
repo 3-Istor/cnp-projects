@@ -22,3 +22,9 @@ spec:
     gateway: true
     tunnel: true
   customerAccess: open
+status:
+  move:
+    id: 2
+    source: aws
+    target: gcp
+    step: prepare
