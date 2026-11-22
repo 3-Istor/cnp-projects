@@ -22,3 +22,9 @@ spec:
     gateway: true
     tunnel: true
   customerAccess: open
+status:
+  move:
+    id: 9
+    source: onprem
+    target: aws
+    step: prepare
