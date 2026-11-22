@@ -122,6 +122,8 @@ spec:
     dependsOn:
     - app: redis
       port: 6379
+    - app: post-service
+      port: 8082
     repoURL: https://github.com/3-Istor/epitweet
   features:
     gatus: true
