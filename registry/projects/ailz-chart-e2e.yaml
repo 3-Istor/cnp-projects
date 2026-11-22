@@ -1,0 +1,29 @@
+apiVersion: cnp.3istor.com/v1alpha1
+kind: ProjectRecord
+metadata:
+  name: ailz-chart-e2e
+  owner: brian.perret
+spec:
+  targetCloud: onprem
+  stake: sandbox
+  status: active
+  environments:
+    - name: prod
+  apps:
+    - name: e2e-agent
+      type: agent
+  ai:
+    enabled: true
+    models: [claude-haiku-5-5]
+    agents:
+      - name: e2e-agent
+        owner: brian.perret
+        models: [claude-haiku-5-5]
+        dailyTokenBudget: 20000
+        tools: [run_python]
+        isolation: gvisor
+        callers: [user:members]
+        status: active
+  features:
+    gatus: false
+    offhoursGuard: false
