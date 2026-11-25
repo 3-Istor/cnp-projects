@@ -20,6 +20,10 @@ spec:
     repoURL: https://github.com/3-Istor/demo-soutenance
     hostnames:
       prod: demo-soutenance-brian-recette-304.3istor.com
+      staging: demo-soutenance-brian-recette-304-staging.3istor.com
+    environments:
+    - prod
+    - staging
   features:
     gatus: true
     offhoursGuard: true
