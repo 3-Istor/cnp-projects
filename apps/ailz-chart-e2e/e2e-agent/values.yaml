@@ -1,0 +1,11 @@
+agent:
+  template: assistant
+  description: Agent de test du rendu Argo CD (chart)
+  model: claude-haiku-5-5
+  effort: low
+  maxSteps: 3
+  trigger: {type: chat}
+  instructions: |
+    Tu es un agent de test. Réponds en une phrase.
+  tools: [run_python]
+  calls: []
