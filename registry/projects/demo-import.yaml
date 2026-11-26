@@ -1,0 +1,18 @@
+apiVersion: cnp.3istor.com/v1alpha1
+kind: ProjectRecord
+metadata:
+  name: demo-import
+  owner: brian.perret
+  createdAt: '2026-11-26T22:22:27.694950+00:00'
+spec:
+  targetCloud: onprem
+  cloudClass: onprem
+  status: active
+  environments:
+  - name: prod
+  apps: []
+  features:
+    gatus: true
+    offhoursGuard: true
+    gateway: true
+    tunnel: true
