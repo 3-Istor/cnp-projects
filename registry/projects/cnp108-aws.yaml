@@ -5,7 +5,7 @@ metadata:
   owner: hugo.guillet
   createdAt: '2026-11-15T13:21:45.549388+00:00'
 spec:
-  targetCloud: gcp
+  targetCloud: aws
   status: active
   environments:
   - name: prod
@@ -26,4 +26,5 @@ status:
     id: 12
     source: gcp
     target: aws
-    step: prepare
+    step: switch
+    restores: []
