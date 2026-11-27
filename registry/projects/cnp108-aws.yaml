@@ -21,3 +21,9 @@ spec:
     gateway: true
     tunnel: true
   cloudClass: public
+status:
+  move:
+    id: 12
+    source: gcp
+    target: aws
+    step: prepare
